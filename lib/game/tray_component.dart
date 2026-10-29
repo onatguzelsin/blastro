@@ -1,0 +1,26 @@
+import 'package:flame/components.dart';
+
+import '../core/polyomino/polyomino_shape.dart';
+import 'game_layout.dart';
+import 'tray_piece_component.dart';
+
+/// The bottom 3-slot tray. Owns one [TrayPieceComponent] per slot.
+class TrayComponent extends Component {
+  TrayComponent(GameLayout layout)
+    : slots = [
+        for (var i = 0; i < GameLayout.traySlots; i++)
+          TrayPieceComponent(i, layout),
+      ];
+
+  final List<TrayPieceComponent> slots;
+
+  @override
+  Future<void> onLoad() async => addAll(slots);
+
+  /// Mirrors run state: a null entry means that piece was already placed.
+  void sync(List<Polyomino?> tray) {
+    for (var i = 0; i < slots.length; i++) {
+      slots[i].piece = tray[i];
+    }
+  }
+}
