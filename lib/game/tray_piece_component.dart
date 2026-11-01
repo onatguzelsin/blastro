@@ -4,8 +4,10 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/services.dart';
 
+import '../core/grid/grid_cell.dart';
 import '../core/polyomino/polyomino_shape.dart';
 import 'blastro_game.dart';
+import 'cell_visual_renderer.dart';
 import 'game_layout.dart';
 
 /// One tray slot. Its hit area is the whole slot (easy to grab); the piece is
@@ -22,9 +24,14 @@ class TrayPieceComponent extends PositionComponent
   final int slot;
   final GameLayout layout;
   Polyomino? piece;
-  Vector2 _touch = Vector2.zero();
 
-  static final _paint = Paint()..color = const Color(0xFF5C8DFF);
+  /// How this piece's cells look (every cell shares it). Plain unless the
+  /// piece was given an enhancement or edition.
+  GridCell cell = GridCell.plain;
+
+  /// Animation clock in seconds, set by the game every frame.
+  double time = 0;
+  Vector2 _touch = Vector2.zero();
 
   bool get _dragging => isDragged;
 
@@ -86,17 +93,16 @@ class TrayPieceComponent extends PositionComponent
       size.y / 2 - p.height * cs / 2,
     );
     for (final o in p.cells) {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(
-            origin.dx + o.col * cs + 1,
-            origin.dy + o.row * cs + 1,
-            cs - 2,
-            cs - 2,
-          ),
-          const Radius.circular(4),
+      CellVisualRenderer.paint(
+        canvas,
+        Rect.fromLTWH(
+          origin.dx + o.col * cs + 1,
+          origin.dy + o.row * cs + 1,
+          cs - 2,
+          cs - 2,
         ),
-        _paint,
+        cell,
+        time,
       );
     }
   }

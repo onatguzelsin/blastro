@@ -5,13 +5,15 @@ import '../core/roguelite/boss_blinds.dart';
 import '../core/roguelite/joker_effects.dart';
 import '../core/roguelite/run_modifiers.dart';
 import '../core/roguelite/shop_generator.dart';
+import '../core/roguelite/vouchers.dart';
 import '../core/scoring/clear_archetypes.dart';
 import '../core/scoring/combo_window.dart';
 import '../core/scoring/scoring_pipeline.dart';
 
-/// playing -> blindCleared (cash out) -> shopping -> playing (next blind).
-/// Beating the Ante 8 Finisher pauses at [victory] first.
-enum RunStatus { playing, blindCleared, shopping, victory, lost }
+/// blindSelect (pick a blind) -> playing -> blindCleared (cash out) ->
+/// shopping -> blindSelect (next blind). Beating the Ante 8 Finisher pauses
+/// at [victory] first.
+enum RunStatus { blindSelect, playing, blindCleared, shopping, victory, lost }
 
 /// Immutable snapshot of a run. [grid] must never be mutated in place; the
 /// notifier always swaps in a copy.
@@ -32,7 +34,9 @@ class RunState {
     this.placements = 0,
     this.actions = 0,
     this.endless = false,
+    this.skipped = const [],
     this.consumables = const [],
+    this.vouchers = const [],
     this.archetypeLevels = const {},
     this.archetypesThisBlind = const [],
     this.shop,
@@ -71,8 +75,14 @@ class RunState {
   /// The player beat the Ante 8 Finisher and chose to keep going (Antes 9+).
   final bool endless;
 
+  /// Blinds of this ante that were skipped instead of played.
+  final List<BlindType> skipped;
+
   /// Held consumable ids (max 2).
   final List<String> consumables;
+
+  /// Owned voucher ids: permanent upgrades, one purchase each.
+  final List<String> vouchers;
   final Map<ClearArchetype, int> archetypeLevels;
 
   /// Archetypes that scored this blind, in order (The Eye / The Mouth).
@@ -90,16 +100,16 @@ class RunState {
   /// the score replay can show the cells being scored.
   final GridMatrix? preClearBoard;
 
-  RunModifiers get modifiers => RunModifiers.fromJokers(jokers);
+  /// Jokers plus owned vouchers.
+  RunModifiers get modifiers => RunModifiers.fromRun(jokers, [
+    for (final id in vouchers) VoucherRegistry.byId(id).modifiers,
+  ]);
 
-  int get target {
-    final base = AnteScaling.baseTarget(ante);
-    final b = boss;
-    final factor = (blind == BlindType.boss && b != null)
-        ? b.targetMultiplier
-        : blind.multiplier;
-    return (base * factor).round();
-  }
+  int get target => AnteScaling.targetFor(
+    ante,
+    blind,
+    bossMultiplier: boss?.targetMultiplier,
+  );
 
   List<Polyomino> get unplaced => tray.whereType<Polyomino>().toList();
 
@@ -118,7 +128,9 @@ class RunState {
     int? placements,
     int? actions,
     bool? endless,
+    List<BlindType>? skipped,
     List<String>? consumables,
+    List<String>? vouchers,
     Map<ClearArchetype, int>? archetypeLevels,
     List<ClearArchetype>? archetypesThisBlind,
     ShopState? shop,
@@ -144,7 +156,9 @@ class RunState {
     placements: placements ?? this.placements,
     actions: actions ?? this.actions,
     endless: endless ?? this.endless,
+    skipped: skipped ?? this.skipped,
     consumables: consumables ?? this.consumables,
+    vouchers: vouchers ?? this.vouchers,
     archetypeLevels: archetypeLevels ?? this.archetypeLevels,
     archetypesThisBlind: archetypesThisBlind ?? this.archetypesThisBlind,
     shop: clearShop ? null : (shop ?? this.shop),

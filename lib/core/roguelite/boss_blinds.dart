@@ -1,5 +1,8 @@
 import 'dart:math';
 
+import '../grid/grid_cell.dart';
+import 'joker_effects.dart';
+
 /// A Boss Blind modifier. Every flag is a rule the engine enforces.
 class BossBlind {
   const BossBlind({
@@ -53,6 +56,26 @@ class BossBlind {
 
   /// Reserved for the Ante 8 Finisher (and every 8th Endless ante).
   final bool finisher;
+
+  /// Board cells this boss switches off (drawn with a red cross).
+  /// The Window blanks enhancements/editions; The Pillar skips the residue
+  /// scan, which is where Steel scores.
+  bool debuffsCell(GridCell cell) {
+    if (ignoreCellEffects &&
+        (cell.enhancement != CellEnhancement.none ||
+            cell.edition != CellEdition.none)) {
+      return true;
+    }
+    return disableResidue && cell.enhancement == CellEnhancement.steel;
+  }
+
+  /// Jokers this boss weakens or switches off. Violet Vessel halves XMult;
+  /// The Pillar disables jokers that score residue cells.
+  bool debuffsJoker(Joker joker) {
+    if (halveXMult && (joker.xMult != 1.0 || joker.hookXMult)) return true;
+    return disableResidue &&
+        (joker.onResidueScanned != null || joker.retriggersResidue);
+  }
 
   /// Whether [archetypeName] scores given the archetypes that already scored
   /// this blind (in order).

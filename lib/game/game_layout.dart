@@ -16,7 +16,7 @@ class GameLayout {
   });
 
   /// Space under the status bar reserved for the joker bar + HUD overlays.
-  static const double hudReserve = 276;
+  static const double hudReserve = 318;
   static const double sideMargin = 12;
   static const double trayScale = 0.5;
   static const int traySlots = 3;

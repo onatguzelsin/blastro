@@ -40,7 +40,9 @@ abstract final class RunStateCodec {
     'placements': s.placements,
     'actions': s.actions,
     'endless': s.endless,
+    'skipped': [for (final b in s.skipped) b.name],
     'consumables': s.consumables,
+    'vouchers': s.vouchers,
     'levels': {for (final e in s.archetypeLevels.entries) e.key.name: e.value},
     'used': [for (final a in s.archetypesThisBlind) a.name],
     'shop': s.shop?.toJson(),
@@ -73,7 +75,12 @@ abstract final class RunStateCodec {
       placements: j['placements'] as int,
       actions: j['actions'] as int,
       endless: (j['endless'] as bool?) ?? false,
+      skipped: [
+        for (final n in (j['skipped'] as List<dynamic>?) ?? const [])
+          BlindType.values.byName(n as String),
+      ],
       consumables: List<String>.from(j['consumables'] as List),
+      vouchers: List<String>.from((j['vouchers'] as List?) ?? const []),
       archetypeLevels: {
         for (final e in (j['levels'] as Map<String, dynamic>).entries)
           ClearArchetype.values.byName(e.key): e.value as int,

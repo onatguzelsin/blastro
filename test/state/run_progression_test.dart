@@ -48,6 +48,8 @@ void main() {
       expect(c.read(runProvider).status, RunStatus.shopping);
       expect(c.read(runProvider).gold, greaterThan(gold));
       n.leaveShop();
+      expect(c.read(runProvider).status, RunStatus.blindSelect);
+      n.playBlind();
       final s = c.read(runProvider);
       expect(
         [s.status, s.blind, s.score],

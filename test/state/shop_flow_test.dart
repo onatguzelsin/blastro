@@ -42,7 +42,7 @@ void main() {
     final s = c.read(runProvider);
     expect(s.gold, 10 + 4 + 3 + 2);
     expect(s.status, RunStatus.shopping);
-    expect(s.shop!.stock.length, 4);
+    expect(s.shop!.stock.length, 5, reason: '2 jokers + 2 cards + 1 voucher');
   });
 
   test('Pocket Change adds to the cash-out', () {
@@ -65,14 +65,14 @@ void main() {
 
   test('buying a joker and a card spends gold and empties the slot', () {
     final c = _container();
-    final n = _shop(c);
+    final n = _shop(c, gold: 99);
     final stock = c.read(runProvider).shop!.stock;
     final joker = stock.firstWhere((i) => i.isJoker);
     final card = stock.firstWhere((i) => !i.isJoker);
     n.buyItem(joker.id);
     n.buyItem(card.id);
     final s = c.read(runProvider);
-    expect(s.gold, 30 - joker.price - card.price);
+    expect(s.gold, 99 - joker.price - card.price);
     expect(s.jokers.single.id, joker.id);
     expect(s.consumables, [card.id]);
     expect(s.shop!.stock.map((i) => i.id), isNot(contains(joker.id)));
@@ -117,14 +117,14 @@ void main() {
     expect(c.read(runProvider).gold, 99);
   });
 
-  test('reroll costs \$5 then \$6, replaces stock, needs money', () {
+  test('reroll costs \$5 then \$7, replaces stock, needs money', () {
     final c = _container();
     final n = _shop(c);
     final before = c.read(runProvider).shop!.stock.map((i) => i.id).toList();
     n.rerollShop();
     expect(c.read(runProvider).gold, 25);
     n.rerollShop();
-    expect(c.read(runProvider).gold, 19);
+    expect(c.read(runProvider).gold, 18, reason: '\$5 + \$7');
     expect(c.read(runProvider).shop!.rerolls, 2);
     expect(
       c.read(runProvider).shop!.stock.map((i) => i.id).toList(),
@@ -145,7 +145,7 @@ void main() {
     );
     n.sellJoker(0);
     expect(c.read(runProvider).jokers, isEmpty);
-    expect(c.read(runProvider).gold, 30 + 4);
+    expect(c.read(runProvider).gold, 30 + 7, reason: 'half of the \$15 base');
   });
 
   test('item ids from the shop always resolve', () {

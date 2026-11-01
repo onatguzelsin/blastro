@@ -17,6 +17,7 @@ class Joker {
     this.xMult = 1.0,
     this.copy = JokerCopy.none,
     this.retriggersResidue = false,
+    this.hookXMult = false,
     this.modifiers = RunModifiers.none,
     this.onCellScored,
     this.onResidueScanned,
@@ -40,6 +41,10 @@ class Joker {
   final double xMult;
   final JokerCopy copy;
   final bool retriggersResidue;
+
+  /// True if an `onMove`/hook bonus can include an XMult (so Violet Vessel
+  /// can mark it as debuffed without running the hook).
+  final bool hookXMult;
   final RunModifiers modifiers;
   final CellScoredHook? onCellScored;
   final ResidueScannedHook? onResidueScanned;

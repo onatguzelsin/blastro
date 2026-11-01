@@ -17,6 +17,13 @@ class TrayComponent extends Component {
   @override
   Future<void> onLoad() async => addAll(slots);
 
+  /// Advances the animation clock of every slot.
+  set time(double t) {
+    for (final slot in slots) {
+      slot.time = t;
+    }
+  }
+
   /// Mirrors run state: a null entry means that piece was already placed.
   void sync(List<Polyomino?> tray) {
     for (var i = 0; i < slots.length; i++) {

@@ -4,7 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'state/run_persistence.dart';
-import 'ui/game_screen.dart';
+import 'ui/lifecycle_auto_save.dart';
+import 'ui/main_menu_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +33,9 @@ class BlastroApp extends StatelessWidget {
       title: 'BLASTRO',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(useMaterial3: true),
-      home: const GameScreen(),
+      // Auto-save covers every screen, including the menu.
+      builder: (context, child) => LifecycleAutoSave(child: child!),
+      home: const MainMenuScreen(),
     );
   }
 }

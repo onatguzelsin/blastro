@@ -6,17 +6,13 @@ import 'package:blastro/core/roguelite/shop_generator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('stock: 2 jokers + 2 consumables, seeded and reproducible', () {
+  test('stock: 2 jokers + 2 cards + 1 voucher, seeded and reproducible', () {
     final a = ShopGenerator.generate(Random(7));
     final b = ShopGenerator.generate(Random(7));
     expect(a.map((i) => i.id), b.map((i) => i.id));
     expect(a.where((i) => i.isJoker).length, 2);
-    expect(a.where((i) => !i.isJoker).length, 2);
-    expect(a.where((i) => !i.isJoker).every((i) => i.price == 3), isTrue);
-    expect(
-      a.where((i) => i.isJoker).every((i) => i.price >= 4 && i.price <= 8),
-      isTrue,
-    );
+    expect(a.where((i) => i.kind == ShopItemKind.consumable).length, 2);
+    expect(a.where((i) => i.isVoucher).length, 1);
     expect(
       ShopGenerator.generate(Random(8)).map((i) => i.id),
       isNot(a.map((i) => i.id)),
@@ -36,16 +32,24 @@ void main() {
     }
   });
 
-  test('reroll cost escalates by \$1', () {
+  test('reroll cost starts at \$5 and rises \$2 per reroll', () {
     expect(
-      [for (var i = 0; i < 4; i++) ShopGenerator.rerollCost(i)],
-      [5, 6, 7, 8],
+      [for (var i = 0; i < 5; i++) ShopGenerator.rerollCost(i)],
+      [5, 7, 9, 11, 13],
     );
   });
 
   test('canBuy: ok, tooExpensive, noSlot, alreadyOwned', () {
-    const joker = ShopItem(id: 'joker_plain', isJoker: true, price: 4);
-    const card = ShopItem(id: 'chisel_bonus', isJoker: false, price: 3);
+    const joker = ShopItem(
+      id: 'joker_plain',
+      kind: ShopItemKind.joker,
+      price: 6,
+    );
+    const card = ShopItem(
+      id: 'chisel_bonus',
+      kind: ShopItemKind.consumable,
+      price: 6,
+    );
     BuyResult buy(
       ShopItem i, {
       int gold = 10,
@@ -60,7 +64,7 @@ void main() {
       ownedJokerIds: owned,
     );
     expect(buy(joker), BuyResult.ok);
-    expect(buy(joker, gold: 3), BuyResult.tooExpensive);
+    expect(buy(joker, gold: 5), BuyResult.tooExpensive);
     expect(buy(joker, jokers: 5), BuyResult.noSlot);
     expect(buy(card, cards: 2), BuyResult.noSlot);
     expect(buy(card, jokers: 5), BuyResult.ok);

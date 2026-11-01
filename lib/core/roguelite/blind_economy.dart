@@ -48,10 +48,11 @@ abstract final class BlindEconomy {
     required int gold,
     required int traysRemaining,
     int jokerBonus = 0,
+    int interestCap = BlindEconomy.interestCap,
   }) => CashOutBreakdown(
     reward: reward(blind),
     traysBonus: max(0, traysRemaining - 1),
-    interest: interest(gold),
+    interest: interest(gold, cap: interestCap),
     jokerBonus: jokerBonus,
   );
 }

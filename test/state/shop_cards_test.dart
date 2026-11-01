@@ -86,6 +86,8 @@ void main() {
           ),
     );
     n.leaveShop();
+    expect(c.read(runProvider).status, RunStatus.blindSelect);
+    n.playBlind();
     final s = c.read(runProvider);
     expect(
       [s.traysRemaining, s.discards],

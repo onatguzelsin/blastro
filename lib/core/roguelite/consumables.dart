@@ -15,8 +15,10 @@ sealed class Consumable {
     required this.description,
   });
 
-  static const int price = 3;
   static const int maxHeld = 2;
+
+  /// Shop price at Ante 1: Blueprints \$5, Chisels \$6.
+  int get basePrice;
 
   final String id;
   final String name;
@@ -25,6 +27,9 @@ sealed class Consumable {
 
 /// Architectural Blueprint (Planet): +1 level for one clear archetype.
 final class BlueprintCard extends Consumable {
+  @override
+  int get basePrice => 5;
+
   const BlueprintCard({
     required super.id,
     required super.name,
@@ -44,6 +49,9 @@ enum ChiselKind { enhance, edition, seal, demolish }
 
 /// Chisel (Tarot): edits up to [targets] random occupied cells.
 final class ChiselCard extends Consumable {
+  @override
+  int get basePrice => 6;
+
   const ChiselCard({
     required super.id,
     required super.name,

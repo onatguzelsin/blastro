@@ -160,10 +160,12 @@ void main() {
     n.buyItem(item.id);
     final saved = store.load()!.state;
     expect(saved.gold, c.read(runProvider).gold);
-    expect(saved.shop!.stock.length, 3);
+    expect(saved.shop!.stock.length, 4);
     n.rerollShop();
     expect(store.load()!.state.shop!.rerolls, 1);
     n.leaveShop();
+    expect(store.load()!.state.status, RunStatus.blindSelect);
+    n.playBlind();
     expect(store.load()!.state.status, RunStatus.playing);
   });
 }

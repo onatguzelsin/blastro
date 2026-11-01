@@ -2,16 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/roguelite/ante_scaling.dart';
+import '../state/placement_preview.dart';
 import '../state/run_notifier.dart';
 import '../state/run_state.dart';
+import 'boss_banner.dart';
+import 'score_preview_line.dart';
 
 /// Telemetry HUD under the joker bar: blind target + progress, and the
 /// Trays / Discards / Rerolls / Bankroll row.
 class HudTopBar extends ConsumerWidget {
-  const HudTopBar({super.key, this.onBag});
+  const HudTopBar({super.key, this.onBag, this.onMenu});
 
   /// Opens the Block Bag modal.
   final VoidCallback? onBag;
+
+  /// Returns to the main menu (the run is auto-saved).
+  final VoidCallback? onMenu;
 
   /// `Small Blind`, `Big Blind`, or the active Boss's own name.
   static String blindName(RunState s) => switch (s.blind) {
@@ -23,9 +29,17 @@ class HudTopBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(runProvider);
+    final preview = ref.watch(placementPreviewProvider);
+    final boss = s.status == RunStatus.playing && s.blind == BlindType.boss
+        ? s.boss
+        : null;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (boss != null) ...[
+          BossBanner(boss: boss, usedArchetypes: s.archetypesThisBlind),
+          const SizedBox(height: 6),
+        ],
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
@@ -43,6 +57,14 @@ class HudTopBar extends ConsumerWidget {
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
+                  if (onMenu != null)
+                    GestureDetector(
+                      onTap: onMenu,
+                      child: const Padding(
+                        padding: EdgeInsets.only(right: 10),
+                        child: Icon(Icons.menu, size: 20),
+                      ),
+                    ),
                   if (onBag != null)
                     GestureDetector(
                       onTap: onBag,
@@ -61,21 +83,29 @@ class HudTopBar extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 4),
-              Row(
-                children: [
-                  Text(
-                    'Score ${s.score}',
-                    style: const TextStyle(fontSize: 12),
+              // While a piece hovers over a clearing spot, this row shows
+              // what dropping it there would score.
+              if (preview != null)
+                ScorePreviewLine(summary: preview)
+              else
+                SizedBox(
+                  height: ScorePreviewLine.height,
+                  child: Row(
+                    children: [
+                      Text(
+                        'Score ${s.score}',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: LinearProgressIndicator(
+                          value: (s.score / s.target).clamp(0.0, 1.0),
+                          minHeight: 6,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: LinearProgressIndicator(
-                      value: (s.score / s.target).clamp(0.0, 1.0),
-                      minHeight: 6,
-                    ),
-                  ),
-                ],
-              ),
+                ),
             ],
           ),
         ),

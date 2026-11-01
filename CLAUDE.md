@@ -18,10 +18,13 @@
 
 ## 2. Core Domain & 4-Phase Scoring Rules
 
-- **Grid & Tray:** 8x8 matrix (`0..7` rows/cols). 3-piece tray drawn from `BlockBag` (24 shapes). No rotation unless `joker_gyroscope` or a consumable is active. All 3 tray pieces must be placed before drawing the next tray unless a Discard charge is spent.
+- **Grid & Tray:** 8x8 matrix (`0..7` rows/cols). 3-piece tray drawn from `BlockBag` (24 shapes). No rotation unless `joker_gyroscope` or a consumable is active. All 3 tray pieces must be placed before drawing the next tray unless a Discard charge is spent. Leftover pieces never carry across blinds (see *Blind Transition* below).
 - **Intersection Rule:** When a row and column clear simultaneously (*Cross Clear*), the shared intersection cell `(r, c)` triggers **TWICE** during Phase 2.
 - **Combo Window (3-Placement Rule):** Increments on any clearing placement. Survives up to 2 consecutive non-clearing setup moves; resets to `0` on the 3rd consecutive non-clearing placement.
-- **Board Persistence:** The 8x8 board state persists across `Small -> Big -> Boss Blind` within an Ante, resetting only after defeating a Boss Blind.
+- **Board Persistence:** The 8x8 board state persists across `Small -> Big -> Boss Blind` within an Ante, resetting only after defeating a Boss Blind. Every occupied cell (including enhancements, editions and seals) stays intact on a transition inside an Ante.
+- **Blind Transition (Full Tray Refresh):** When a Blind is defeated and the player enters the next Blind, the board is kept per *Board Persistence*, but any leftover pieces in the tray are **discarded** and a brand-new full 3-piece tray is dealt from the `BlockBag`. This also applies after a Boss Blind (new Ante, empty board). The rule is `BlindTransition.enterNext` in `lib/core/roguelite/blind_transition.dart`.
+- **Blind Flow & Blind Select:** `Blind defeated -> Cash Out -> Shop -> Blind Select -> Play Blind`. A new run also starts at Blind Select. The Blind Select screen shows all 3 Blinds of the Ante (Completed / Skipped / Current / Locked) with Target Score and Reward. Small and Big may be skipped (forfeits that Blind's reward and the shop; board and tray are untouched); the Boss Blind cannot be skipped.
+- **Boss Blind Visibility:** The Boss for an Ante is a pure function of `(ante, seed)` (`BossRegistry.pick`), so its name and exact rule are shown on the Boss card at Blind Select during the Small and Big Blinds. During the Boss round the HUD shows a red warning banner (name + rule), and blocks/Jokers the Boss switches off (`BossBlind.debuffsCell` / `debuffsJoker`) get a red cross.
 - **Dual Lose Conditions:** Run ends if:
   1. `traysRemaining == 0 && currentScore < blindTarget`, OR
   2. No remaining tray piece fits anywhere on the 8x8 grid AND `discardsRemaining == 0`.

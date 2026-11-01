@@ -1,14 +1,11 @@
 import 'package:blastro/core/grid/grid_cell.dart';
 import 'package:blastro/core/grid/grid_matrix.dart';
-import 'package:blastro/core/roguelite/joker_registry.dart';
-import 'package:blastro/core/roguelite/shop_generator.dart';
 import 'package:blastro/state/run_notifier.dart';
 import 'package:blastro/state/run_persistence.dart';
 import 'package:blastro/state/run_state.dart';
 import 'package:blastro/ui/bag_modal.dart';
 import 'package:blastro/ui/cash_out_sheet.dart';
 import 'package:blastro/ui/lifecycle_auto_save.dart';
-import 'package:blastro/ui/shop_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,15 +35,6 @@ Future<ProviderContainer> _pump(
   return c;
 }
 
-const _plainItem = ShopItem(id: 'joker_plain', isJoker: true, price: 4);
-const _cardItem = ShopItem(id: 'chisel_bonus', isJoker: false, price: 3);
-
-RunState _shopping(RunState s, {int gold = 10}) => s.copyWith(
-  status: RunStatus.shopping,
-  gold: gold,
-  shop: const ShopState(stock: [_plainItem, _cardItem]),
-);
-
 void main() {
   testWidgets('Cash Out shows reward, unused trays, interest and total', (
     t,
@@ -71,66 +59,6 @@ void main() {
     await t.pump();
     expect(c.read(runProvider).status, RunStatus.shopping);
     expect(c.read(runProvider).gold, 21);
-  });
-
-  testWidgets('Shop: buy a joker, reroll, and advance to the next blind', (
-    t,
-  ) async {
-    final c = await _pump(t, const ShopSheet(), setup: _shopping);
-    expect(find.text('Shop'), findsOneWidget);
-    expect(find.text('Plain Joker'), findsOneWidget);
-    expect(find.text('Chisel: Bonus'), findsOneWidget);
-    expect(find.text('Reroll  \$5'), findsOneWidget);
-
-    await t.tap(find.text('Buy \$4'));
-    await t.pumpAndSettle();
-    expect(c.read(runProvider).jokers.single.id, 'joker_plain');
-    expect(c.read(runProvider).gold, 6);
-    expect(find.text('Sell Plain Joker +\$2'), findsOneWidget);
-
-    await t.tap(find.text('Reroll  \$5'));
-    await t.pumpAndSettle();
-    expect(c.read(runProvider).shop!.rerolls, 1);
-    expect(c.read(runProvider).gold, 1);
-    expect(find.text('Reroll  \$6'), findsOneWidget);
-
-    await t.ensureVisible(find.text('Next Blind'));
-    await t.tap(find.text('Next Blind'));
-    await t.pump();
-    expect(c.read(runProvider).status, RunStatus.playing);
-    expect(c.read(runProvider).blind.name, 'big');
-  });
-
-  testWidgets('Shop disables buying when you cannot afford it', (t) async {
-    final c = await _pump(
-      t,
-      const ShopSheet(),
-      setup: (s) => _shopping(s, gold: 2),
-    );
-    final button = t.widget<FilledButton>(
-      find.widgetWithText(FilledButton, '\$4'),
-    );
-    expect(button.onPressed, isNull);
-    await t.tap(find.text('\$4'), warnIfMissed: false);
-    expect(c.read(runProvider).jokers, isEmpty);
-  });
-
-  testWidgets('Shop can sell a joker and use a held card', (t) async {
-    final c = await _pump(
-      t,
-      const ShopSheet(),
-      setup: (s) => _shopping(s).copyWith(
-        jokers: [JokerRegistry.byId('joker_plain').joker],
-        consumables: ['blueprint_single'],
-      ),
-    );
-    await t.ensureVisible(find.text('Use'));
-    await t.tap(find.text('Use'));
-    await t.pump();
-    expect(c.read(runProvider).consumables, isEmpty);
-    await t.tap(find.text('Sell Plain Joker +\$2'));
-    await t.pump();
-    expect(c.read(runProvider).jokers, isEmpty);
   });
 
   testWidgets('Bag modal shows remaining counts and enhanced cells', (t) async {

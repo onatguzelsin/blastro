@@ -1,11 +1,14 @@
 import 'package:blastro/core/grid/grid_cell.dart';
 import 'package:blastro/core/grid/grid_matrix.dart';
 import 'package:blastro/core/polyomino/polyomino_catalog.dart';
+import 'package:blastro/core/roguelite/ante_scaling.dart';
+import 'package:blastro/core/roguelite/boss_blinds.dart';
 import 'package:blastro/core/roguelite/joker_registry.dart';
 import 'package:blastro/state/joker_pulse.dart';
 import 'package:blastro/state/replay_totals.dart';
 import 'package:blastro/state/run_notifier.dart';
 import 'package:blastro/state/run_state.dart';
+import 'package:blastro/ui/boss_banner.dart';
 import 'package:blastro/ui/game_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,8 +63,16 @@ void main() {
     expect(find.text('Shop'), findsOneWidget);
 
     n.leaveShop();
+    await t.pump(const Duration(milliseconds: 100));
     await t.pump(const Duration(milliseconds: 500));
     expect(find.text('Shop'), findsNothing);
+    // Between blinds the player lands on Blind Select, not the board.
+    expect(find.text('ANTE 1'), findsOneWidget);
+    expect(find.text('Play Blind'), findsOneWidget);
+
+    await t.tap(find.text('Play Blind'));
+    await t.pump(const Duration(milliseconds: 100));
+    expect(find.text('Play Blind'), findsNothing);
     expect(find.text('Big Blind · Ante 1'), findsOneWidget);
   });
 
@@ -133,6 +144,46 @@ void main() {
       greaterThan(0),
       reason: 'the joker card was pulsed',
     );
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('a new run opens on Blind Select; Play Blind reveals the board', (
+    t,
+  ) async {
+    final c = await _boot(t);
+    c.read(runProvider.notifier).startRun(3);
+    await t.pump(const Duration(milliseconds: 100));
+    await t.pump(const Duration(milliseconds: 100));
+    expect(find.text('ANTE 1'), findsOneWidget);
+    await t.tap(find.text('Play Blind'));
+    await t.pump(const Duration(milliseconds: 100));
+    expect(find.text('ANTE 1'), findsNothing);
+    expect(c.read(runProvider).status, RunStatus.playing);
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('a Boss round shows the warning banner in the real HUD', (
+    t,
+  ) async {
+    final c = await _boot(t);
+    final n = c.read(runProvider.notifier);
+    n.debugSet(
+      c
+          .read(runProvider)
+          .copyWith(status: RunStatus.blindSelect, blind: BlindType.boss),
+    );
+    await t.pump(const Duration(milliseconds: 100));
+    final preview = BossRegistry.pick(1, c.read(runProvider).seed);
+    expect(
+      find.text(preview.description),
+      findsOneWidget,
+      reason: 'the rule is shown on the Boss card before playing',
+    );
+    n.playBlind();
+    await t.pump(const Duration(milliseconds: 100));
+    await t.pump(const Duration(milliseconds: 100));
+    expect(find.byType(BossBanner), findsOneWidget);
+    expect(find.text(preview.name.toUpperCase()), findsOneWidget);
     expect(t.takeException(), isNull);
   });
 }

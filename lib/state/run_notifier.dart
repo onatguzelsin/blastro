@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,6 +6,7 @@ import '../core/polyomino/block_bag.dart';
 import '../core/polyomino/polyomino_shape.dart';
 import '../core/roguelite/ante_scaling.dart';
 import '../core/scoring/combo_window.dart';
+import 'run_blind_flow.dart';
 import 'run_persistence.dart';
 import 'run_placement.dart';
 import 'run_state.dart';
@@ -20,6 +19,10 @@ final runProvider = NotifierProvider<RunNotifier, RunState>(RunNotifier.new);
 class RunNotifier extends Notifier<RunState> {
   late BlockBag _bag;
 
+  /// False until a run is started or restored, so the placeholder run made
+  /// on first read (before the menu is used) is never written to disk.
+  bool _active = false;
+
   /// Pieces still in the bag (for the Bag modal).
   List<Polyomino> get bagRemaining => _bag.remaining;
 
@@ -28,14 +31,21 @@ class RunNotifier extends Notifier<RunState> {
     final saved = ref.read(savedRunProvider);
     if (saved != null) {
       _bag = BlockBag.restore(saved.bag);
+      _active = true;
       return saved.state;
     }
     return _fresh(DateTime.now().millisecondsSinceEpoch);
   }
 
-  void newRun([int? seed]) {
-    _commit(_fresh(seed ?? DateTime.now().millisecondsSinceEpoch));
+  /// A fresh run that starts at the first blind's card (the menu path).
+  void startRun([int? seed]) {
+    _commit(RunBlindFlow.toHub(_fresh(_seedOrNow(seed))));
   }
+
+  /// A fresh run that starts straight on the board.
+  void newRun([int? seed]) => _commit(_fresh(_seedOrNow(seed)));
+
+  int _seedOrNow(int? seed) => seed ?? DateTime.now().millisecondsSinceEpoch;
 
   RunState _fresh(int seed) {
     _bag = BlockBag(seed);
@@ -58,12 +68,14 @@ class RunNotifier extends Notifier<RunState> {
 
   /// Sets the state, then saves (or deletes the save if the run is lost).
   void _commit(RunState next) {
+    _active = true;
     state = next;
     saveNow();
   }
 
   /// Writes the active run now (also called on `AppLifecycleState.paused`).
   void saveNow() {
+    if (!_active) return;
     ref.read(runPersistenceProvider)?.save(state, _bag.snapshot());
   }
 
@@ -124,29 +136,15 @@ class RunNotifier extends Notifier<RunState> {
   void useConsumable(int index) =>
       _commit(RunTransitions.useConsumable(state, index));
 
-  /// Leaves the shop for the next blind. The board persists across blinds
-  /// and only resets after a Boss Blind falls.
-  void leaveShop() {
-    final s = state;
-    if (s.status != RunStatus.shopping) return;
-    final bossDown = s.blind == BlindType.boss;
-    final nextBlind = switch (s.blind) {
-      BlindType.small => BlindType.big,
-      BlindType.big => BlindType.boss,
-      BlindType.boss => BlindType.small,
-    };
-    final next = RunTransitions.beginBlind(
-      s.copyWith(
-        grid: bossDown ? GridMatrix() : null,
-        ante: bossDown ? min(s.ante + 1, AnteScaling.lastEndlessAnte) : null,
-        blind: nextBlind,
-        status: RunStatus.playing,
-        clearShop: true,
-        tray: s.unplaced.isEmpty ? _bag.drawTray() : null,
-      ),
-    );
-    _commit(RunPlacement.settle(next, _bag));
-  }
+  /// Leaves the shop: applies the blind-transition rule (board persists
+  /// unless a Boss fell; full new tray) and shows the next Blind Select.
+  void leaveShop() => _commit(RunBlindFlow.enterHub(state, _bag));
+
+  /// "Play Blind" on the Blind Select screen.
+  void playBlind() => _commit(RunBlindFlow.play(state, _bag));
+
+  /// "Skip Blind" (Small/Big): no reward, no shop; board and tray stay.
+  void skipBlind() => _commit(RunBlindFlow.skip(state));
 
   @visibleForTesting
   void debugSet(RunState value) => state = value;

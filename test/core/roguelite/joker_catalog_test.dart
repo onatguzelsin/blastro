@@ -35,9 +35,9 @@ ScoreResult _score(
 );
 
 void main() {
-  test('registry has exactly 20 unique jokers incl. all named ones', () {
-    expect(JokerRegistry.all.length, 20);
-    expect(JokerRegistry.all.map((d) => d.id).toSet().length, 20);
+  test('registry has 23 unique jokers (20 core + 3 legendary)', () {
+    expect(JokerRegistry.all.length, 23);
+    expect(JokerRegistry.all.map((d) => d.id).toSet().length, 23);
     for (final id in [
       'joker_cornerstone', 'joker_3x3_sanctuary', 'joker_seven_fingers',
       'joker_gyroscope', 'joker_streak_saver', 'joker_heavyweight',
@@ -48,7 +48,7 @@ void main() {
     }
     expect(JokerRegistry.maybeById('nope'), isNull);
     expect(() => JokerRegistry.byId('nope'), throwsArgumentError);
-    expect(JokerRegistry.byId('joker_plain').sellValue, 2);
+    expect(JokerRegistry.byId('joker_plain').sellValue, 3, reason: 'base \$6');
   });
 
   test('baseline single clear: 90 chips x 1 mult', () {

@@ -19,9 +19,23 @@ abstract final class RunTransitions {
     gold: s.gold,
     traysRemaining: s.traysRemaining,
     jokerBonus: s.modifiers.cashOutBonus,
+    interestCap: s.modifiers.interestCap,
   );
 
   static Set<String> _owned(RunState s) => {for (final j in s.jokers) j.id};
+
+  /// A fresh batch of shop items at this run's Ante, with voucher perks.
+  static List<ShopItem> _stock(RunState s) {
+    final mods = s.modifiers;
+    return ShopGenerator.generate(
+      rng(s),
+      ownedJokerIds: _owned(s),
+      ownedVoucherIds: s.vouchers.toSet(),
+      ante: s.ante,
+      discount: mods.priceDiscount,
+      extraJokerSlots: mods.shopJokerSlots,
+    );
+  }
 
   static RunState collectCashOut(RunState s) {
     if (s.status != RunStatus.blindCleared) return s;
@@ -30,11 +44,7 @@ abstract final class RunTransitions {
       status: RunStatus.shopping,
       actions: s.actions + 1,
     );
-    return paid.copyWith(
-      shop: ShopState(
-        stock: ShopGenerator.generate(rng(paid), ownedJokerIds: _owned(paid)),
-      ),
-    );
+    return paid.copyWith(shop: ShopState(stock: _stock(paid)));
   }
 
   static RunState buy(RunState s, String itemId) {
@@ -48,6 +58,7 @@ abstract final class RunTransitions {
       jokerCount: s.jokers.length,
       consumableCount: s.consumables.length,
       ownedJokerIds: _owned(s),
+      ownedVoucherIds: s.vouchers.toSet(),
     );
     if (ok != BuyResult.ok) return s;
     return s.copyWith(
@@ -55,7 +66,10 @@ abstract final class RunTransitions {
       jokers: item.isJoker
           ? [...s.jokers, JokerRegistry.byId(item.id).joker]
           : null,
-      consumables: item.isJoker ? null : [...s.consumables, item.id],
+      consumables: item.kind == ShopItemKind.consumable
+          ? [...s.consumables, item.id]
+          : null,
+      vouchers: item.isVoucher ? [...s.vouchers, item.id] : null,
       shop: ShopState(
         stock: [
           for (final i in shop.stock)
@@ -74,10 +88,7 @@ abstract final class RunTransitions {
     if (s.gold < cost) return s;
     final paid = s.copyWith(gold: s.gold - cost, actions: s.actions + 1);
     return paid.copyWith(
-      shop: ShopState(
-        stock: ShopGenerator.generate(rng(paid), ownedJokerIds: _owned(paid)),
-        rerolls: shop.rerolls + 1,
-      ),
+      shop: ShopState(stock: _stock(paid), rerolls: shop.rerolls + 1),
     );
   }
 

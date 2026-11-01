@@ -10,16 +10,29 @@ class RunModifiers {
     this.cashOutBonus = 0,
     this.luckyAlways = false,
     this.steelMultiplier = defaultSteelMultiplier,
+    this.interestCap = defaultInterestCap,
+    this.priceDiscount = 0,
+    this.shopJokerSlots = 0,
   });
 
   static const double defaultSteelMultiplier = 1.5;
+  static const int defaultInterestCap = 5;
   static const RunModifiers none = RunModifiers();
 
-  /// Aggregates every joker on the bar (additive, OR, or max as fits).
-  factory RunModifiers.fromJokers(List<Joker> jokers) {
+  /// Aggregates every joker on the bar.
+  factory RunModifiers.fromJokers(List<Joker> jokers) =>
+      RunModifiers.combine([for (final j in jokers) j.modifiers]);
+
+  /// Jokers plus the modifiers of owned vouchers.
+  factory RunModifiers.fromRun(
+    List<Joker> jokers,
+    Iterable<RunModifiers> extras,
+  ) => RunModifiers.combine([for (final j in jokers) j.modifiers, ...extras]);
+
+  /// Additive where it makes sense, OR for switches, max for caps.
+  factory RunModifiers.combine(Iterable<RunModifiers> parts) {
     var out = none;
-    for (final j in jokers) {
-      final m = j.modifiers;
+    for (final m in parts) {
       out = RunModifiers(
         rotation: out.rotation || m.rotation,
         extraSetupMoves: out.extraSetupMoves + m.extraSetupMoves,
@@ -30,6 +43,11 @@ class RunModifiers {
         steelMultiplier: m.steelMultiplier > out.steelMultiplier
             ? m.steelMultiplier
             : out.steelMultiplier,
+        interestCap: m.interestCap > out.interestCap
+            ? m.interestCap
+            : out.interestCap,
+        priceDiscount: out.priceDiscount + m.priceDiscount,
+        shopJokerSlots: out.shopJokerSlots + m.shopJokerSlots,
       );
     }
     return out;
@@ -49,4 +67,13 @@ class RunModifiers {
 
   /// Mult factor for Steel residue cells (Baron of Steel raises it).
   final double steelMultiplier;
+
+  /// Most interest you can earn at cash out (Seed Money raises it).
+  final int interestCap;
+
+  /// Fraction taken off future shop prices (Clearance Sale), 0..1.
+  final double priceDiscount;
+
+  /// Extra jokers for sale in every shop (Overstock).
+  final int shopJokerSlots;
 }
