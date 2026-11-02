@@ -30,10 +30,12 @@ void main() {
       VoidCallback? skip,
     }) async {
       await t.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SingleChildScrollView(
-              child: BlindCard(preview: p, onPlay: play, onSkip: skip),
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: BlindCard(preview: p, onPlay: play, onSkip: skip),
+              ),
             ),
           ),
         ),

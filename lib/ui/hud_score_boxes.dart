@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/i18n/str_keys_game.dart';
+import '../state/locale_provider.dart';
 import '../state/placement_preview.dart';
 import '../state/replay_totals.dart';
 
@@ -15,6 +17,7 @@ class HudScoreBoxes extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final t = ref.watch(stringsProvider).t;
     final totals = ref.watch(replayTotalsProvider);
     final preview = ref.watch(placementPreviewProvider);
     final chips = preview?.chips ?? totals.chips;
@@ -25,7 +28,7 @@ class HudScoreBoxes extends ConsumerWidget {
         Expanded(
           child: _box(
             format(chips),
-            previewing ? 'PREVIEW CHIPS' : 'CHIPS',
+            t(previewing ? HudStr.previewChips : HudStr.chips),
             const Color(0xFF1976D2),
             previewing,
           ),
@@ -40,7 +43,7 @@ class HudScoreBoxes extends ConsumerWidget {
         Expanded(
           child: _box(
             format(mult),
-            previewing ? 'PREVIEW MULT' : 'MULT',
+            t(previewing ? HudStr.previewMult : HudStr.mult),
             const Color(0xFFD32F2F),
             previewing,
           ),

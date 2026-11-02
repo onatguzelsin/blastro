@@ -87,7 +87,7 @@ class TrayPieceComponent extends PositionComponent
   void render(Canvas canvas) {
     final p = piece;
     if (p == null) return;
-    final cs = layout.cell * (_dragging ? 1.0 : GameLayout.trayScale);
+    final cs = layout.cell * (_dragging ? 1.0 : layout.trayScaleFor(p));
     final origin = Offset(
       size.x / 2 - p.width * cs / 2,
       size.y / 2 - p.height * cs / 2,
@@ -101,7 +101,8 @@ class TrayPieceComponent extends PositionComponent
           cs - 2,
           cs - 2,
         ),
-        cell,
+        // Every cell of a dealt piece wears the piece's color.
+        cell.copyWith(color: p.color),
         time,
       );
     }

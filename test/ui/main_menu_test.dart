@@ -2,6 +2,7 @@ import 'package:blastro/core/roguelite/ante_scaling.dart';
 import 'package:blastro/state/run_notifier.dart';
 import 'package:blastro/state/run_persistence.dart';
 import 'package:blastro/state/run_state.dart';
+import 'package:blastro/ui/deck_select_screen.dart';
 import 'package:blastro/ui/game_screen.dart';
 import 'package:blastro/ui/how_to_play_sheet.dart';
 import 'package:blastro/ui/main_menu_screen.dart';
@@ -91,7 +92,7 @@ void main() {
       await t.pumpAndSettle();
       expect(find.text('The goal'), findsOneWidget);
       expect(find.text('Scoring: Chips x Mult'), findsOneWidget);
-      expect(howToPlaySections.length, greaterThanOrEqualTo(6));
+      expect(howToPlaySections().length, greaterThanOrEqualTo(6));
       await t.tap(find.byIcon(Icons.close));
       await t.pumpAndSettle();
       expect(find.text('The goal'), findsNothing);
@@ -114,6 +115,11 @@ void main() {
     testWidgets('New Run opens the game on the Blind Select hub', (t) async {
       final c = await _pumpMenu(t, await _store());
       await t.tap(find.text('New Run'));
+      await t.pumpAndSettle();
+      // New Run opens the deck picker first.
+      expect(find.byType(DeckSelectScreen), findsOneWidget);
+      expect(find.byType(GameScreen), findsNothing);
+      await t.tap(find.text('Start Run with This Deck'));
       await t.pump();
       await _settleGame(t);
       expect(find.byType(GameScreen), findsOneWidget);
@@ -139,6 +145,8 @@ void main() {
     ) async {
       await _pumpMenu(t, await _store());
       await t.tap(find.text('New Run'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Start Run with This Deck'));
       await t.pump();
       await _settleGame(t);
       await t.tap(find.text('Menu'));

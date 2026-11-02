@@ -12,12 +12,14 @@ import '../state/run_notifier.dart';
 import '../state/run_placement.dart';
 import '../state/run_state.dart';
 import 'board_component.dart';
+import 'callout_relay.dart';
 import 'board_highlight.dart';
 import 'game_layout.dart';
 import 'game_overlay_sync.dart';
 import 'juice_effects.dart';
 import 'score_replay_player.dart';
 import 'tray_component.dart';
+import '../state/locale_provider.dart';
 
 /// Flame view of the run. All rules live in [RunNotifier]; this class only
 /// renders state, forwards drops, and replays score events.
@@ -47,6 +49,7 @@ class BlastroGame extends FlameGame {
   ProviderSubscription<RunState>? _subscription;
   int _handledSerial = 0;
   bool _loaded = false;
+  final _callouts = CalloutRelay();
   double _clock = 0;
 
   /// The (slot, row, col) last previewed, so a hover that has not moved to a
@@ -71,6 +74,7 @@ class BlastroGame extends FlameGame {
       size,
       topInset: topInset,
       bottomInset: bottomInset,
+      traySlots: _state.mode.traySize,
     );
     _board = BoardComponent(layout, _state.grid);
     _highlight = BoardHighlight(layout);
@@ -81,6 +85,7 @@ class BlastroGame extends FlameGame {
       onTotals: (c, m) =>
           container.read(replayTotalsProvider.notifier).set(c, m),
       onDone: _finishReplay,
+      strings: () => container.read(stringsProvider),
       onJokerPulse: (slot) =>
           container.read(jokerPulseProvider.notifier).pulse(slot),
     );
@@ -111,6 +116,7 @@ class BlastroGame extends FlameGame {
 
   void _onState(RunState s) {
     _tray.sync(s.tray);
+    _callouts.observe(s.quickEvent);
     _board.boss = s.status == RunStatus.playing && s.blind == BlindType.boss
         ? s.boss
         : null;
@@ -136,6 +142,7 @@ class BlastroGame extends FlameGame {
     if (!_replay.isPlaying && !inputLocked) {
       _board.grid = s.grid;
       GameOverlays.sync(this, s.status);
+      _callouts.flush(container);
     }
   }
 
@@ -143,6 +150,7 @@ class BlastroGame extends FlameGame {
     inputLocked = false;
     _board.grid = _state.grid;
     GameOverlays.sync(this, _state.status);
+    _callouts.flush(container);
   }
 
   /// Called every frame of a drag with the dragged piece's center. The ghost
@@ -175,8 +183,11 @@ class BlastroGame extends FlameGame {
     }
   }
 
-  /// "New Run" buttons: a fresh run that starts at the Blind Select hub.
-  void startNewRun() => _notifier.startRun();
+  /// "New Run" after a win or loss: a fresh run with the SAME starter deck,
+  /// starting at the Blind Select hub.
+  void startNewRun() => _state.mode.isQuickPlay
+      ? _notifier.startQuickPlay()
+      : _notifier.startRun(null, _state.deck);
 
   /// Gyroscope: tap a tray piece to rotate it.
   void rotateSlot(int slot) {

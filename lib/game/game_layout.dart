@@ -13,13 +13,19 @@ class GameLayout {
     required this.boardOrigin,
     required this.trayTop,
     required this.trayHeight,
+    required this.traySlots,
   });
 
   /// Space under the status bar reserved for the joker bar + HUD overlays.
   static const double hudReserve = 318;
   static const double sideMargin = 12;
   static const double trayScale = 0.5;
-  static const int traySlots = 3;
+
+  /// Normal runs deal 3 pieces per tray, Quick Play 4.
+  static const int defaultTraySlots = 3;
+
+  /// A tray piece may use at most this much of its slot's width.
+  static const double slotFill = 0.95;
 
   /// Mandatory touch ergonomics: a dragged piece is drawn 80dp above the
   /// touch point so the thumb never covers the cells.
@@ -30,12 +36,16 @@ class GameLayout {
   final double trayTop;
   final double trayHeight;
 
+  /// How many pieces sit side by side in the tray (3, or 4 in Quick Play).
+  final int traySlots;
+
   double get boardSide => cell * GridMatrix.size;
 
   factory GameLayout.compute(
     Vector2 size, {
     double topInset = 0,
     double bottomInset = 0,
+    int traySlots = defaultTraySlots,
   }) {
     final top = topInset + hudReserve;
     final byWidth = (size.x - sideMargin * 2) / GridMatrix.size;
@@ -49,6 +59,7 @@ class GameLayout {
       boardOrigin: Vector2(boardX, top),
       trayTop: top + cell * GridMatrix.size + 20,
       trayHeight: trayHeight,
+      traySlots: traySlots,
     );
   }
 
@@ -67,6 +78,18 @@ class GameLayout {
   }
 
   Vector2 get traySlotSize => Vector2(boardSide / traySlots, trayHeight);
+
+  /// How big [piece] is drawn while it waits in the tray. Normally half a
+  /// board cell, but never so big that it spills out of its slot: with 4
+  /// slots a 5-wide bar shrinks (about 0.37x) so neighbours never overlap.
+  double trayScaleFor(Polyomino piece) => min(
+    trayScale,
+    min(
+      slotFill * traySlotSize.x / (piece.width * cell),
+      // The tray is already exactly tall enough for a 5-tall piece at 0.5x.
+      traySlotSize.y / (piece.height * cell),
+    ),
+  );
 
   /// Where the dragged piece's CENTER is drawn for a given touch point.
   Vector2 dragCenter(Vector2 touch) => touch + fingerOffset;

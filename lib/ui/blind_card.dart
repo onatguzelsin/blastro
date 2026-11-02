@@ -3,10 +3,16 @@ import 'package:flutter/material.dart';
 import '../core/roguelite/ante_scaling.dart';
 import '../core/roguelite/blind_preview.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../core/i18n/app_strings.dart';
+import '../core/i18n/str_keys_game.dart';
+import '../state/locale_provider.dart';
+
 /// One blind on the Blind Select screen: status, target, reward, and for the
 /// current blind the Play (and, for Small/Big, Skip) buttons. The Boss card is
 /// red and spells out the boss's exact rule so the player can prepare.
-class BlindCard extends StatelessWidget {
+class BlindCard extends ConsumerWidget {
   const BlindCard({super.key, required this.preview, this.onPlay, this.onSkip});
 
   final BlindPreview preview;
@@ -15,15 +21,18 @@ class BlindCard extends StatelessWidget {
 
   bool get _isBoss => preview.blind == BlindType.boss;
 
-  static String statusLabel(BlindCardStatus s) => switch (s) {
-    BlindCardStatus.completed => 'COMPLETED',
-    BlindCardStatus.skipped => 'SKIPPED',
-    BlindCardStatus.current => 'PLAY NOW',
-    BlindCardStatus.locked => 'LOCKED',
-  };
+  static String statusLabel(BlindCardStatus s, AppStrings strings) =>
+      strings.t(switch (s) {
+        BlindCardStatus.completed => FlowStr.completed,
+        BlindCardStatus.skipped => FlowStr.skipped,
+        BlindCardStatus.current => FlowStr.playNow,
+        BlindCardStatus.locked => FlowStr.locked,
+      });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final strings = ref.watch(stringsProvider);
+    final t = strings.t;
     final current = preview.status == BlindCardStatus.current;
     final accent = _isBoss ? const Color(0xFFFF5252) : const Color(0xFF5C8DFF);
     return Opacity(
@@ -56,30 +65,30 @@ class BlindCard extends StatelessWidget {
                     ),
                   ),
                 Text(
-                  preview.blind.displayName,
+                  strings.blind(preview.blind),
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
                 const Spacer(),
-                _badge(preview.status),
+                _badge(preview.status, strings),
               ],
             ),
-            if (_isBoss && preview.boss != null) _bossRule(preview),
+            if (_isBoss && preview.boss != null) _bossRule(preview, strings),
             const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
                   child: _stat(
-                    'Target',
+                    t(HudStr.target),
                     '${preview.target}',
                     const Color(0xFFFFD54F),
                   ),
                 ),
                 Expanded(
                   child: _stat(
-                    'Reward',
+                    t(FlowStr.reward),
                     '\$${preview.reward}',
                     const Color(0xFF69F0AE),
                   ),
@@ -94,7 +103,7 @@ class BlindCard extends StatelessWidget {
                     flex: 2,
                     child: FilledButton(
                       onPressed: onPlay,
-                      child: const Text('Play Blind'),
+                      child: Text(t(FlowStr.playBlind)),
                     ),
                   ),
                   if (preview.canSkip) ...[
@@ -102,7 +111,7 @@ class BlindCard extends StatelessWidget {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: onSkip,
-                        child: const Text('Skip Blind'),
+                        child: Text(t(FlowStr.skipBlind)),
                       ),
                     ),
                   ],
@@ -115,7 +124,7 @@ class BlindCard extends StatelessWidget {
     );
   }
 
-  Widget _bossRule(BlindPreview p) => Container(
+  Widget _bossRule(BlindPreview p, AppStrings strings) => Container(
     margin: const EdgeInsets.only(top: 8),
     padding: const EdgeInsets.all(8),
     width: double.infinity,
@@ -127,12 +136,12 @@ class BlindCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          p.boss!.name.toUpperCase(),
+          strings.nameOf(p.boss!.id, p.boss!.name).toUpperCase(),
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
         ),
         const SizedBox(height: 2),
         Text(
-          p.boss!.description,
+          strings.descriptionOf(p.boss!.id, p.boss!.description),
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -143,7 +152,7 @@ class BlindCard extends StatelessWidget {
     ),
   );
 
-  Widget _badge(BlindCardStatus s) {
+  Widget _badge(BlindCardStatus s, AppStrings strings) {
     final color = switch (s) {
       BlindCardStatus.current => const Color(0xFFFFD54F),
       BlindCardStatus.completed => const Color(0xFF69F0AE),
@@ -156,7 +165,7 @@ class BlindCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        statusLabel(s),
+        statusLabel(s, strings),
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.bold,

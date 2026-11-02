@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/painting.dart';
 
 import '../core/grid/grid_cell.dart';
+import 'block_palette.dart';
 import 'edition_shimmer_painter.dart';
 import 'enhancement_cell_painter.dart';
 import 'steel_cell_painter.dart';
@@ -22,7 +23,7 @@ abstract final class CellVisualRenderer {
     canvas.clipRRect(shape);
     switch (cell.enhancement) {
       case CellEnhancement.none:
-        _plain(canvas, rect);
+        _plain(canvas, rect, BlockPalette.of(cell.color));
       case CellEnhancement.bonus:
         EnhancementCellPainter.gold(canvas, rect);
       case CellEnhancement.mult:
@@ -36,23 +37,39 @@ abstract final class CellVisualRenderer {
     }
     EditionShimmerPainter.paint(canvas, rect, cell.edition, time);
     if (cell.seal == CellSeal.red) _redSeal(canvas, rect, time);
+    // An enhanced cell keeps its look; its color shows as a slim bottom edge.
+    if (cell.enhancement != CellEnhancement.none && cell.color != null) {
+      _colorEdge(canvas, rect, BlockPalette.of(cell.color));
+    }
     canvas.restore();
   }
 
-  static void _plain(Canvas canvas, Rect r) {
+  static void _plain(Canvas canvas, Rect r, BlockShade shade) {
     canvas.drawRect(
       r,
       Paint()
-        ..shader = EnhancementCellPainter.vertical(r, const [
-          Color(0xFF7BA2FF),
-          Color(0xFF4A78F0),
+        ..shader = EnhancementCellPainter.vertical(r, [
+          shade.light,
+          shade.dark,
         ]),
     );
     canvas.drawRect(
       Rect.fromLTWH(r.left, r.top, r.width, r.height * 0.2),
       Paint()..color = const Color(0x2EFFFFFF),
     );
-    EnhancementCellPainter.frame(canvas, r, const Color(0x55233A8C), 1.2);
+    EnhancementCellPainter.frame(canvas, r, shade.frame, 1.2);
+  }
+
+  static void _colorEdge(Canvas canvas, Rect r, BlockShade shade) {
+    canvas.drawRect(
+      Rect.fromLTWH(
+        r.left,
+        r.bottom - r.height * 0.13,
+        r.width,
+        r.height * 0.13,
+      ),
+      Paint()..color = shade.dark,
+    );
   }
 
   /// Red Seal: a pulsing red frame with an inner glow, around the whole cell.

@@ -52,8 +52,10 @@ Future<ProviderContainer> _pump(WidgetTester t, Widget child) async {
 void main() {
   group('ScorePreviewLine', () {
     Future<void> show(WidgetTester t, PreviewSummary s) => t.pumpWidget(
-      MaterialApp(
-        home: Scaffold(body: ScorePreviewLine(summary: s)),
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(body: ScorePreviewLine(summary: s)),
+        ),
       ),
     );
 

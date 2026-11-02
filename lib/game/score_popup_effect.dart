@@ -2,6 +2,9 @@ import 'package:flame/components.dart';
 import 'package:flutter/painting.dart';
 
 import '../core/scoring/score_step_event.dart';
+import '../core/i18n/app_strings.dart';
+import '../core/i18n/str_keys_game.dart';
+import '../core/i18n/supported_language.dart';
 
 /// Floating score text that drifts up and fades out, then removes itself.
 class ScorePopupEffect extends PositionComponent {
@@ -20,13 +23,16 @@ class ScorePopupEffect extends PositionComponent {
   double _age = 0;
 
   /// Popup label for a replay step; null for steps that show nothing.
-  static String? textFor(ScoreStepEvent e) {
+  static String? textFor(ScoreStepEvent e, [AppStrings? strings]) {
+    final s = strings ?? AppStrings(Languages.english);
     if (e.kind == ScoreStepKind.finalScore) {
       return e.label.replaceFirst('final ', '');
     }
     if (e.flatBonus > 0) return '+${e.flatBonus}';
     if (e.multFactor > 1) return 'x${_trim(e.multFactor)}';
-    if (e.multDelta > 0) return '+${_trim(e.multDelta)} Mult';
+    if (e.multDelta > 0) {
+      return s.t(HudStr.popupMult, {'n': _trim(e.multDelta)});
+    }
     if (e.chipsDelta > 0) return '+${_trim(e.chipsDelta)}';
     return null;
   }

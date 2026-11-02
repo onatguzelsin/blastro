@@ -8,6 +8,7 @@ import 'game_layout.dart';
 import 'haptic_throttle.dart';
 import 'juice_effects.dart';
 import 'score_popup_effect.dart';
+import '../core/i18n/app_strings.dart';
 
 /// Replays a `List<ScoreStepEvent>` one step at a time: each step updates the
 /// live Chips x Mult totals, spawns a floating popup and fires a haptic.
@@ -18,6 +19,7 @@ class ScoreReplayPlayer extends Component {
     required this.onTotals,
     required this.onDone,
     required this.onJokerPulse,
+    this.strings,
   });
 
   final GameLayout layout;
@@ -27,6 +29,9 @@ class ScoreReplayPlayer extends Component {
 
   /// A joker's step is playing: bounce its card in the overlay bar.
   final void Function(int slot) onJokerPulse;
+
+  /// Translates the popup text; English if null.
+  final AppStrings? Function()? strings;
   final HapticThrottle _haptics = HapticThrottle();
 
   List<ScoreStepEvent> _events = const [];
@@ -92,7 +97,7 @@ class ScoreReplayPlayer extends Component {
     }
     final slot = e.jokerIndex;
     if (slot != null) onJokerPulse(slot);
-    final text = ScorePopupEffect.textFor(e);
+    final text = ScorePopupEffect.textFor(e, strings?.call());
     if (text == null) return;
     popupParent.add(
       ScorePopupEffect(

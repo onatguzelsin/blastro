@@ -81,14 +81,16 @@ void main() {
       t,
     ) async {
       await t.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 90,
-              height: 80,
-              child: JokerCard(
-                joker: _joker('joker_singularity'),
-                debuffed: true,
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 90,
+                height: 80,
+                child: JokerCard(
+                  joker: _joker('joker_singularity'),
+                  debuffed: true,
+                ),
               ),
             ),
           ),

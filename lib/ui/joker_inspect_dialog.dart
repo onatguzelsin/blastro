@@ -6,6 +6,12 @@ import 'joker_card.dart';
 import 'rarity_badge.dart';
 import 'rarity_frame.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../core/i18n/str_keys_game.dart';
+import '../core/i18n/str_keys_menu.dart';
+import '../state/locale_provider.dart';
+
 /// Tap an owned joker to see what it does, its rarity and what it sells for.
 Future<void> showJokerInspect(BuildContext context, Joker joker) =>
     showDialog<void>(
@@ -13,13 +19,14 @@ Future<void> showJokerInspect(BuildContext context, Joker joker) =>
       builder: (context) => JokerInspectDialog(joker: joker),
     );
 
-class JokerInspectDialog extends StatelessWidget {
+class JokerInspectDialog extends ConsumerWidget {
   const JokerInspectDialog({super.key, required this.joker});
 
   final Joker joker;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final strings = ref.watch(stringsProvider);
     final def = JokerRegistry.maybeById(joker.id);
     final style = JokerCard.styleOf(joker);
     return Dialog(
@@ -39,7 +46,7 @@ class JokerInspectDialog extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      JokerCard.nameOf(joker),
+                      JokerCard.nameOf(joker, strings),
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w900,
@@ -51,13 +58,15 @@ class JokerInspectDialog extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                def?.description ?? JokerCard.effectOf(joker),
+                def == null
+                    ? JokerCard.effectOf(joker, strings)
+                    : strings.descriptionOf(def.id, def.description),
                 style: const TextStyle(fontSize: 15, height: 1.35),
               ),
               if (def != null) ...[
                 const SizedBox(height: 10),
                 Text(
-                  'Sells for \$${def.sellValue}',
+                  strings.t(FlowStr.sellsFor, {'n': def.sellValue}),
                   style: const TextStyle(color: Colors.white60),
                 ),
               ],
@@ -66,7 +75,7 @@ class JokerInspectDialog extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: FilledButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Close'),
+                  child: Text(strings.t(MenuStr.close)),
                 ),
               ),
             ],

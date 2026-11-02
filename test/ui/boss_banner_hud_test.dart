@@ -42,8 +42,10 @@ void main() {
   group('BossBanner', () {
     testWidgets('shows the boss name and its exact rule', (t) async {
       await t.pumpWidget(
-        MaterialApp(
-          home: Scaffold(body: BossBanner(boss: BossRegistry.wall)),
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(body: BossBanner(boss: BossRegistry.wall)),
+          ),
         ),
       );
       expect(find.text('THE WALL'), findsOneWidget);
@@ -53,8 +55,10 @@ void main() {
 
     testWidgets('is high contrast: red background, white text', (t) async {
       await t.pumpWidget(
-        MaterialApp(
-          home: Scaffold(body: BossBanner(boss: BossRegistry.flint)),
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(body: BossBanner(boss: BossRegistry.flint)),
+          ),
         ),
       );
       final box = t.widget<Container>(find.byType(Container).first);
@@ -67,14 +71,16 @@ void main() {
       t,
     ) async {
       await t.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BossBanner(
-              boss: BossRegistry.eye,
-              usedArchetypes: const [
-                ClearArchetype.single,
-                ClearArchetype.parallelDouble,
-              ],
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: BossBanner(
+                boss: BossRegistry.eye,
+                usedArchetypes: const [
+                  ClearArchetype.single,
+                  ClearArchetype.parallelDouble,
+                ],
+              ),
             ),
           ),
         ),
@@ -84,11 +90,13 @@ void main() {
 
     testWidgets('other bosses never show a "Used" line', (t) async {
       await t.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BossBanner(
-              boss: BossRegistry.wall,
-              usedArchetypes: const [ClearArchetype.single],
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: BossBanner(
+                boss: BossRegistry.wall,
+                usedArchetypes: const [ClearArchetype.single],
+              ),
             ),
           ),
         ),

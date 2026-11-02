@@ -1,3 +1,5 @@
+import 'block_color.dart';
+
 /// A relative (row, col) cell offset inside a polyomino's bounding box.
 class CellOffset {
   const CellOffset(this.row, this.col);
@@ -19,7 +21,7 @@ class CellOffset {
 /// An immutable polyomino. Cells are normalized so the top-left of the
 /// bounding box is (0,0) and are sorted row-major.
 class Polyomino {
-  Polyomino(this.id, List<CellOffset> cells, {this.dangerTier = 1})
+  Polyomino(this.id, List<CellOffset> cells, {this.dangerTier = 1, this.color})
     : cells = List.unmodifiable(_normalize(cells)) {
     height = this.cells.map((c) => c.row).reduce((a, b) => a > b ? a : b) + 1;
     width = this.cells.map((c) => c.col).reduce((a, b) => a > b ? a : b) + 1;
@@ -46,10 +48,17 @@ class Polyomino {
   /// 1 (easy to place) .. 4 (hardest to fit on a crowded board).
   final int dangerTier;
 
+  /// The color this piece was dealt in (null for an uncolored catalog shape).
+  /// Its cells keep it when placed, and rotations keep it too.
+  final BlockColor? color;
+
   late final int height;
   late final int width;
 
   int get cellCount => cells.length;
+
+  Polyomino withColor(BlockColor? c) =>
+      Polyomino(id, cells, dangerTier: dangerTier, color: c);
 
   /// All distinct orientations (4 rotations x optional mirror), starting with
   /// this shape itself. Only usable when rotation is unlocked
@@ -67,7 +76,12 @@ class Polyomino {
           ? cells.map((c) => CellOffset(c.row, -c.col)).toList()
           : cells;
       for (var i = 0; i < 4; i++) {
-        final candidate = Polyomino(id, shape, dangerTier: dangerTier);
+        final candidate = Polyomino(
+          id,
+          shape,
+          dangerTier: dangerTier,
+          color: color,
+        );
         if (seen.add(candidate.cells.join())) out.add(candidate);
         shape = shape.map((c) => CellOffset(c.col, -c.row)).toList();
       }

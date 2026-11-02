@@ -5,6 +5,8 @@ import '../state/run_notifier.dart';
 import '../state/run_transitions.dart';
 import 'hud_top_bar.dart';
 import 'slide_up_sheet.dart';
+import '../core/i18n/str_keys_game.dart';
+import '../state/locale_provider.dart';
 
 /// Shown when a blind is defeated: base reward + unused trays + interest.
 class CashOutSheet extends ConsumerWidget {
@@ -12,29 +14,35 @@ class CashOutSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = ref.watch(stringsProvider);
+    final t = strings.t;
     final s = ref.watch(runProvider);
     final b = RunTransitions.cashOut(s);
     return SlideUpSheet(
-      title: 'Blind Defeated!',
+      title: t(FlowStr.cashTitle),
       child: Column(
         children: [
           Text(
-            '${HudTopBar.blindName(s)} · Score ${s.score} / ${s.target}',
+            t(FlowStr.cashScore, {
+              'blind': HudTopBar.blindName(s, strings),
+              'score': s.score,
+              'target': s.target,
+            }),
             style: const TextStyle(color: Colors.white70),
           ),
           const SizedBox(height: 14),
-          _line('Blind reward', b.reward),
-          _line('Unused trays', b.traysBonus),
-          _line('Interest (\$1 per \$5)', b.interest),
-          if (b.jokerBonus > 0) _line('Joker bonus', b.jokerBonus),
+          _line(t(FlowStr.cashReward), b.reward),
+          _line(t(FlowStr.cashTrays), b.traysBonus),
+          _line(t(FlowStr.cashInterest), b.interest),
+          if (b.jokerBonus > 0) _line(t(FlowStr.cashJoker), b.jokerBonus),
           const Divider(height: 24),
-          _line('Total', b.total, bold: true),
+          _line(t(FlowStr.cashTotal), b.total, bold: true),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: FilledButton(
               onPressed: () => ref.read(runProvider.notifier).collectCashOut(),
-              child: Text('Cash Out  \$${b.total}'),
+              child: Text(t(FlowStr.cashButton, {'n': b.total})),
             ),
           ),
         ],

@@ -11,6 +11,9 @@ import 'purchase_dialog.dart';
 import 'rarity_style.dart';
 import 'shop_item_tile.dart';
 import 'slide_up_sheet.dart';
+import '../core/i18n/app_strings.dart';
+import '../core/i18n/str_keys_game.dart';
+import '../state/locale_provider.dart';
 
 /// Mobile shop: jokers, vouchers and cards for sale, reroll, sell, advance.
 /// Tapping an item opens a confirmation; nothing is bought in one tap.
@@ -43,6 +46,8 @@ class ShopSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = ref.watch(stringsProvider);
+    final t = strings.t;
     final s = ref.watch(runProvider);
     final notifier = ref.read(runProvider.notifier);
     final stock = s.shop?.stock ?? const <ShopItem>[];
@@ -66,7 +71,7 @@ class ShopSheet extends ConsumerWidget {
     );
 
     return SlideUpSheet(
-      title: 'Shop',
+      title: t(FlowStr.shopTitle),
       trailing: Text(
         '\$${s.gold}',
         style: const TextStyle(
@@ -78,48 +83,58 @@ class ShopSheet extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _heading('Jokers'),
+          _heading(t(FlowStr.shopJokers)),
           tiles(ShopItemKind.joker),
           if (stock.any((i) => i.isVoucher)) ...[
-            _heading('Voucher (permanent upgrade)'),
+            _heading(t(FlowStr.shopVoucher)),
             tiles(ShopItemKind.voucher),
           ],
-          _heading('Cards'),
+          _heading(t(FlowStr.shopCards)),
           tiles(ShopItemKind.consumable),
           const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
               onPressed: s.gold >= rerollCost ? notifier.rerollShop : null,
-              child: Text('Reroll  \$$rerollCost'),
+              child: Text(t(FlowStr.shopReroll, {'n': rerollCost})),
             ),
           ),
-          _heading('Your jokers (${s.jokers.length}/${RunState.maxJokers})'),
+          _heading(
+            t(FlowStr.shopYourJokers, {
+              'n': s.jokers.length,
+              'max': RunState.maxJokers,
+            }),
+          ),
           if (s.jokers.isEmpty)
-            const Text('None yet', style: TextStyle(color: Colors.white38)),
+            Text(
+              t(FlowStr.shopNone),
+              style: const TextStyle(color: Colors.white38),
+            ),
           Wrap(
             spacing: 8,
             children: [
               for (var i = 0; i < s.jokers.length; i++)
-                _sellChip(notifier, s, i),
+                _sellChip(notifier, strings, s, i),
             ],
           ),
           if (s.vouchers.isNotEmpty) ...[
-            _heading('Your vouchers'),
+            _heading(t(FlowStr.shopYourVouchers)),
             Text(
-              [for (final id in s.vouchers) VoucherRegistry.byId(id).name]
-                  .join(' · '),
+              [
+                for (final id in s.vouchers)
+                  strings.nameOf(id, VoucherRegistry.byId(id).name),
+              ].join(' · '),
               style: const TextStyle(color: Color(0xFF14B8A6)),
             ),
           ],
-          _heading('Your cards'),
+          _heading(t(FlowStr.shopYourCards)),
           const ConsumableRow(),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: FilledButton(
               onPressed: notifier.leaveShop,
-              child: const Text('Next Blind'),
+              child: Text(t(FlowStr.shopNext)),
             ),
           ),
         ],
@@ -127,13 +142,23 @@ class ShopSheet extends ConsumerWidget {
     );
   }
 
-  Widget _sellChip(RunNotifier notifier, RunState s, int i) {
+  Widget _sellChip(
+    RunNotifier notifier,
+    AppStrings strings,
+    RunState s,
+    int i,
+  ) {
     final def = JokerRegistry.byId(s.jokers[i].id);
     final style = RarityStyle.ofRarity(def.rarity);
     return ActionChip(
       side: BorderSide(color: style.color, width: 1.5),
       backgroundColor: style.background(0.25),
-      label: Text('Sell ${def.name} +\$${def.sellValue}'),
+      label: Text(
+        strings.t(FlowStr.shopSell, {
+          'name': strings.nameOf(def.id, def.name),
+          'n': def.sellValue,
+        }),
+      ),
       onPressed: () => notifier.sellJoker(i),
     );
   }

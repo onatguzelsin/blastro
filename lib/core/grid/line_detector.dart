@@ -8,6 +8,12 @@ class LineClears {
   final List<int> cols;
 
   int get lineCount => rows.length + cols.length;
+
+  /// How many DISTINCT cells these lines clear. A cell where a cleared row
+  /// and column cross is counted once: one line = 8, a Cross Clear = 15,
+  /// two parallel lines = 16.
+  int get cellCount =>
+      (rows.length + cols.length) * GridMatrix.size - rows.length * cols.length;
   bool get isEmpty => lineCount == 0;
 }
 

@@ -5,6 +5,14 @@ import 'rarity_badge.dart';
 import 'rarity_frame.dart';
 import 'shop_item_info.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../core/i18n/app_strings.dart';
+import '../core/i18n/str_keys_menu.dart';
+import '../core/i18n/supported_language.dart';
+import '../core/i18n/str_keys_game.dart';
+import '../state/locale_provider.dart';
+
 /// Asks "Are you sure?" before anything is bought. Resolves to true only when
 /// the player taps Confirm Purchase.
 Future<bool> showPurchaseDialog(
@@ -21,7 +29,7 @@ Future<bool> showPurchaseDialog(
   return confirmed ?? false;
 }
 
-class PurchaseDialog extends StatelessWidget {
+class PurchaseDialog extends ConsumerWidget {
   const PurchaseDialog({
     super.key,
     required this.item,
@@ -36,23 +44,30 @@ class PurchaseDialog extends StatelessWidget {
   final BuyResult result;
 
   /// Why the purchase is blocked, or null when it can go ahead.
-  static String? blockedReason(ShopItem item, int gold, BuyResult r) =>
-      switch (r) {
-        BuyResult.ok => null,
-        BuyResult.tooExpensive =>
-          'Not enough money: you need \$${item.price - gold} more.',
-        BuyResult.noSlot =>
-          item.isJoker
-              ? 'Your joker slots are full. Sell a joker first.'
-              : 'Your card slots are full. Use a card first.',
-        BuyResult.alreadyOwned => 'You already own this.',
-      };
+  static String? blockedReason(
+    ShopItem item,
+    int gold,
+    BuyResult r, [
+    AppStrings? strings,
+  ]) {
+    final s = strings ?? AppStrings(Languages.english);
+    return switch (r) {
+      BuyResult.ok => null,
+      BuyResult.tooExpensive => s.t(FlowStr.buyBroke, {'n': item.price - gold}),
+      BuyResult.noSlot => s.t(
+        item.isJoker ? FlowStr.buyJokerFull : FlowStr.buyCardFull,
+      ),
+      BuyResult.alreadyOwned => s.t(FlowStr.buyOwned),
+    };
+  }
 
   @override
-  Widget build(BuildContext context) {
-    final info = ShopItemInfo.of(item);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final strings = ref.watch(stringsProvider);
+    final t = strings.t;
+    final info = ShopItemInfo.of(item, strings);
     final remaining = gold - item.price;
-    final reason = blockedReason(item, gold, result);
+    final reason = blockedReason(item, gold, result, strings);
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(24),
@@ -82,8 +97,7 @@ class PurchaseDialog extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                'Are you sure you want to buy ${info.name} for '
-                '\$${item.price}?',
+                t(FlowStr.buyAsk, {'name': info.name, 'n': item.price}),
                 style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w900,
@@ -96,9 +110,9 @@ class PurchaseDialog extends StatelessWidget {
                 style: const TextStyle(fontSize: 14, height: 1.35),
               ),
               const Divider(height: 24),
-              _moneyRow('Your bankroll', '\$$gold', Colors.white),
+              _moneyRow(t(FlowStr.buyBankroll), '\$$gold', Colors.white),
               _moneyRow(
-                'After purchase',
+                t(FlowStr.buyAfter),
                 '\$$remaining',
                 remaining >= 0
                     ? const Color(0xFF69F0AE)
@@ -120,7 +134,7 @@ class PurchaseDialog extends StatelessWidget {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(false),
-                      child: const Text('Cancel'),
+                      child: Text(t(MenuStr.cancel)),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -130,7 +144,7 @@ class PurchaseDialog extends StatelessWidget {
                       onPressed: reason == null
                           ? () => Navigator.of(context).pop(true)
                           : null,
-                      child: const Text('Confirm Purchase'),
+                      child: Text(t(FlowStr.buyConfirm)),
                     ),
                   ),
                 ],

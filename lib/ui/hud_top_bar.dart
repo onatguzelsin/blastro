@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/i18n/app_strings.dart';
+import '../core/i18n/str_keys_game.dart';
 import '../core/roguelite/ante_scaling.dart';
+import '../state/locale_provider.dart';
 import '../state/placement_preview.dart';
 import '../state/run_notifier.dart';
 import '../state/run_state.dart';
 import 'boss_banner.dart';
+import 'quick_play_hud.dart';
 import 'score_preview_line.dart';
+import 'stat_box.dart';
+
+export 'stat_box.dart';
 
 /// Telemetry HUD under the joker bar: blind target + progress, and the
 /// Trays / Discards / Rerolls / Bankroll row.
@@ -20,15 +27,21 @@ class HudTopBar extends ConsumerWidget {
   final VoidCallback? onMenu;
 
   /// `Small Blind`, `Big Blind`, or the active Boss's own name.
-  static String blindName(RunState s) => switch (s.blind) {
-    BlindType.small => 'Small Blind',
-    BlindType.big => 'Big Blind',
-    BlindType.boss => s.boss?.name ?? 'Boss Blind',
-  };
+  static String blindName(RunState s, AppStrings strings) {
+    final boss = s.boss;
+    if (s.blind == BlindType.boss && boss != null) {
+      return strings.nameOf(boss.id, boss.name);
+    }
+    return strings.blind(s.blind);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = ref.watch(stringsProvider);
+    final t = strings.t;
     final s = ref.watch(runProvider);
+    // Quick Play has no blinds or targets: it has its own HUD.
+    if (s.mode.isQuickPlay) return QuickPlayHud(onBag: onBag, onMenu: onMenu);
     final preview = ref.watch(placementPreviewProvider);
     final boss = s.status == RunStatus.playing && s.blind == BlindType.boss
         ? s.boss
@@ -52,7 +65,8 @@ class HudTopBar extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      '${blindName(s)} · Ante ${s.ante}${s.endless ? ' · Endless' : ''}',
+                      '${t(HudStr.anteLine, {'blind': blindName(s, strings), 'n': s.ante})}'
+                      '${s.endless ? ' · ${t(HudStr.endless)}' : ''}',
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
@@ -74,7 +88,7 @@ class HudTopBar extends ConsumerWidget {
                       ),
                     ),
                   Text(
-                    'Target ${s.target}',
+                    '${t(HudStr.target)} ${s.target}',
                     style: const TextStyle(
                       color: Color(0xFFFFD54F),
                       fontWeight: FontWeight.w900,
@@ -93,7 +107,7 @@ class HudTopBar extends ConsumerWidget {
                   child: Row(
                     children: [
                       Text(
-                        'Score ${s.score}',
+                        '${t(HudStr.score)} ${s.score}',
                         style: const TextStyle(fontSize: 12),
                       ),
                       const SizedBox(width: 8),
@@ -113,25 +127,28 @@ class HudTopBar extends ConsumerWidget {
         Row(
           children: [
             Expanded(
-              child: StatBox(label: 'Trays', value: '${s.traysRemaining}'),
+              child: StatBox(
+                label: t(HudStr.trays),
+                value: '${s.traysRemaining}',
+              ),
             ),
             const SizedBox(width: 6),
             Expanded(
               child: StatBox(
-                label: 'Discards',
+                label: t(HudStr.discards),
                 value: '${s.discards}',
                 color: const Color(0xFFEF5350),
                 onTap: () => ref.read(runProvider.notifier).discardTray(),
               ),
             ),
             const SizedBox(width: 6),
-            const Expanded(
-              child: StatBox(label: 'Rerolls', value: '0'),
+            Expanded(
+              child: StatBox(label: t(HudStr.rerolls), value: '0'),
             ),
             const SizedBox(width: 6),
             Expanded(
               child: StatBox(
-                label: 'Bankroll',
+                label: t(HudStr.bankroll),
                 value: '\$${s.gold}',
                 color: const Color(0xFFFFD54F),
               ),
@@ -139,53 +156,6 @@ class HudTopBar extends ConsumerWidget {
           ],
         ),
       ],
-    );
-  }
-}
-
-class StatBox extends StatelessWidget {
-  const StatBox({
-    super.key,
-    required this.label,
-    required this.value,
-    this.color = Colors.white,
-    this.onTap,
-  });
-
-  final String label;
-  final String value;
-  final Color color;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 46,
-        decoration: BoxDecoration(
-          color: const Color(0xFF1E2433),
-          border: Border.all(color: onTap != null ? color : Colors.white12),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(fontSize: 10, color: Colors.white60),
-            ),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

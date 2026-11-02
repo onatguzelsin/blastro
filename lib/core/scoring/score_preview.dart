@@ -21,6 +21,7 @@ class PlacementPreview {
     required this.result,
     required this.archetype,
     this.blockedBy,
+    this.blockedById,
   });
 
   /// The board right after placing, before any line is removed.
@@ -40,6 +41,9 @@ class PlacementPreview {
   /// Name of the boss that scores this clear for 0 (The Eye / The Mouth).
   final String? blockedBy;
 
+  /// Id of that boss, so the HUD can show its translated name.
+  final String? blockedById;
+
   bool get clears => !result.clears.isEmpty;
   double get chips => result.totalChips;
   double get mult => result.totalMult;
@@ -55,6 +59,8 @@ class PlacementPreview {
       mult: blockedBy == null ? mult : 0,
       score: score,
       blockedBy: blockedBy,
+      archetype: a,
+      blockedById: blockedById,
     );
   }
 }
@@ -67,6 +73,8 @@ class PreviewSummary {
     required this.mult,
     required this.score,
     this.blockedBy,
+    this.archetype,
+    this.blockedById,
   });
 
   final String title;
@@ -74,6 +82,11 @@ class PreviewSummary {
   final double mult;
   final int score;
   final String? blockedBy;
+
+  /// The clear type and blocking boss's id, for translated HUD text. They
+  /// follow from [title] and [blockedBy], so equality ignores them.
+  final ClearArchetype? archetype;
+  final String? blockedById;
 
   @override
   bool operator ==(Object other) =>
@@ -150,5 +163,6 @@ PlacementPreview? simulatePlacementPreview({
       boardEmptyAfter: after.isEmpty,
     ),
     blockedBy: result.blockedByBoss ? boss?.name : null,
+    blockedById: result.blockedByBoss ? boss?.id : null,
   );
 }

@@ -1,11 +1,14 @@
 import '../core/grid/grid_matrix.dart';
 import '../core/polyomino/block_bag.dart';
+import '../core/polyomino/block_color.dart';
 import '../core/polyomino/polyomino_catalog.dart';
 import '../core/polyomino/polyomino_shape.dart';
 import '../core/roguelite/ante_scaling.dart';
 import '../core/roguelite/boss_blinds.dart';
 import '../core/roguelite/joker_registry.dart';
+import '../core/roguelite/run_mode.dart';
 import '../core/roguelite/shop_generator.dart';
+import '../core/roguelite/starter_decks.dart';
 import '../core/scoring/clear_archetypes.dart';
 import '../core/scoring/combo_window.dart';
 import 'run_state.dart';
@@ -26,6 +29,8 @@ abstract final class RunStateCodec {
   static Map<String, dynamic> encode(RunState s, BlockBagSnapshot bag) => {
     'v': version,
     'seed': s.seed,
+    'deck': s.deckId,
+    'mode': s.mode.name,
     'grid': s.grid.toJson(),
     'tray': [for (final p in s.tray) p == null ? null : _piece(p)],
     'combo': s.combo.toJson(),
@@ -55,6 +60,10 @@ abstract final class RunStateCodec {
     if (j['v'] != version) throw const FormatException('save version');
     final state = RunState(
       seed: j['seed'] as int,
+      deckId: (j['deck'] as String?) ?? StarterDeck.standardId,
+      mode: RunMode.values.byName(
+        (j['mode'] as String?) ?? RunMode.normal.name,
+      ),
       grid: GridMatrix.fromJson(j['grid'] as List<dynamic>),
       tray: [
         for (final p in j['tray'] as List<dynamic>)
@@ -102,6 +111,7 @@ abstract final class RunStateCodec {
 
   static Map<String, dynamic> _piece(Polyomino p) => {
     'id': p.id,
+    if (p.color != null) 'color': p.color!.name,
     'cells': [
       for (final c in p.cells) [c.row, c.col],
     ],
@@ -109,9 +119,16 @@ abstract final class RunStateCodec {
 
   static Polyomino _pieceFrom(Map<String, dynamic> j) {
     final id = j['id'] as String;
-    return Polyomino(id, [
-      for (final c in j['cells'] as List<dynamic>)
-        CellOffset((c as List)[0] as int, c[1] as int),
-    ], dangerTier: PolyominoCatalog.byId(id).dangerTier);
+    return Polyomino(
+      id,
+      [
+        for (final c in j['cells'] as List<dynamic>)
+          CellOffset((c as List)[0] as int, c[1] as int),
+      ],
+      dangerTier: PolyominoCatalog.byId(id).dangerTier,
+      color: j['color'] == null
+          ? null
+          : BlockColor.values.byName(j['color'] as String),
+    );
   }
 }

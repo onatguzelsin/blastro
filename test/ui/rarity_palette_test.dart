@@ -4,6 +4,7 @@ import 'package:blastro/ui/rarity_badge.dart';
 import 'package:blastro/ui/rarity_frame.dart';
 import 'package:blastro/ui/rarity_style.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _purple = Color(0xFFA855F7);
@@ -104,12 +105,14 @@ void main() {
       t,
     ) async {
       await t.pumpWidget(
-        MaterialApp(
-          home: Column(
-            children: [
-              RarityBadge(style: RarityStyle.common),
-              RarityBadge(style: RarityStyle.legendary),
-            ],
+        ProviderScope(
+          child: MaterialApp(
+            home: Column(
+              children: [
+                RarityBadge(style: RarityStyle.common),
+                RarityBadge(style: RarityStyle.legendary),
+              ],
+            ),
           ),
         ),
       );
@@ -139,8 +142,10 @@ void main() {
         RarityStyle.legendary,
       ]) {
         await t.pumpWidget(
-          MaterialApp(
-            home: RarityFrame(style: style, child: const SizedBox(width: 50)),
+          ProviderScope(
+            child: MaterialApp(
+              home: RarityFrame(style: style, child: const SizedBox(width: 50)),
+            ),
           ),
         );
         final outer = _outer(t, find.byType(RarityFrame));

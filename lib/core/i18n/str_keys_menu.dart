@@ -1,0 +1,33 @@
+import 'str_key.dart';
+
+/// Main Menu, dialogs, deck picker and language picker.
+enum MenuStr implements StrKey {
+  tagline,
+  quickPlay,
+  quickPlayInstant,
+  quickPlayResume,
+  best,
+  restartQuick,
+  restartQuickTitle,
+  restartQuickBody,
+  cancel,
+  restart,
+  continueRun,
+  noRun,
+  newRun,
+  newRunTitle,
+  newRunBody,
+  howToPlay,
+  language,
+  languageTitle,
+  back,
+  menu,
+  close,
+  deckChoose,
+  deckSwipe,
+  deckStart,
+  deckTrays,
+  deckDiscards,
+  deckColors,
+  deckPieces,
+}

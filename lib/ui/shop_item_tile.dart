@@ -5,9 +5,16 @@ import 'rarity_badge.dart';
 import 'rarity_frame.dart';
 import 'shop_item_info.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../core/i18n/app_strings.dart';
+import '../core/i18n/supported_language.dart';
+import '../core/i18n/str_keys_game.dart';
+import '../state/locale_provider.dart';
+
 /// One item for sale. Tapping it opens the purchase confirmation; there is no
 /// one-tap buy. The price is red when you cannot afford it.
-class ShopItemTile extends StatelessWidget {
+class ShopItemTile extends ConsumerWidget {
   const ShopItemTile({
     super.key,
     required this.item,
@@ -21,15 +28,19 @@ class ShopItemTile extends StatelessWidget {
   final BuyResult result;
   final VoidCallback onTap;
 
-  static String statusLabel(ShopItem item, BuyResult r) => switch (r) {
-    BuyResult.ok || BuyResult.tooExpensive => '\$${item.price}',
-    BuyResult.noSlot => 'No slot',
-    BuyResult.alreadyOwned => 'Owned',
-  };
+  static String statusLabel(ShopItem item, BuyResult r, [AppStrings? s]) {
+    final strings = s ?? AppStrings(Languages.english);
+    return switch (r) {
+      BuyResult.ok || BuyResult.tooExpensive => '\$${item.price}',
+      BuyResult.noSlot => strings.t(FlowStr.noSlot),
+      BuyResult.alreadyOwned => strings.t(FlowStr.owned),
+    };
+  }
 
   @override
-  Widget build(BuildContext context) {
-    final info = ShopItemInfo.of(item);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final strings = ref.watch(stringsProvider);
+    final info = ShopItemInfo.of(item, strings);
     final affordable = result == BuyResult.ok;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -64,7 +75,7 @@ class ShopItemTile extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                statusLabel(item, result),
+                statusLabel(item, result, strings),
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w900,

@@ -3,17 +3,18 @@ import '../core/polyomino/polyomino_shape.dart';
 import '../core/roguelite/ante_scaling.dart';
 import '../core/roguelite/boss_blinds.dart';
 import '../core/roguelite/joker_effects.dart';
+import '../core/roguelite/run_mode.dart';
 import '../core/roguelite/run_modifiers.dart';
 import '../core/roguelite/shop_generator.dart';
+import '../core/roguelite/starter_decks.dart';
 import '../core/roguelite/vouchers.dart';
 import '../core/scoring/clear_archetypes.dart';
 import '../core/scoring/combo_window.dart';
 import '../core/scoring/scoring_pipeline.dart';
+import 'quick_play_event.dart';
+import 'run_status.dart';
 
-/// blindSelect (pick a blind) -> playing -> blindCleared (cash out) ->
-/// shopping -> blindSelect (next blind). Beating the Ante 8 Finisher pauses
-/// at [victory] first.
-enum RunStatus { blindSelect, playing, blindCleared, shopping, victory, lost }
+export 'run_status.dart';
 
 /// Immutable snapshot of a run. [grid] must never be mutated in place; the
 /// notifier always swaps in a copy.
@@ -34,6 +35,9 @@ class RunState {
     this.placements = 0,
     this.actions = 0,
     this.endless = false,
+    this.deckId = StarterDeck.standardId,
+    this.mode = RunMode.normal,
+    this.quickEvent = QuickPlayEvent.none,
     this.skipped = const [],
     this.consumables = const [],
     this.vouchers = const [],
@@ -47,8 +51,10 @@ class RunState {
   });
 
   static const int maxJokers = ShopGenerator.maxJokers;
-  static const int traysPerBlind = 5;
-  static const int discardsPerBlind = 3;
+
+  /// The Standard Deck's numbers. Other decks change them: see [deck].
+  static const int traysPerBlind = StarterDeck.defaultTrays;
+  static const int discardsPerBlind = StarterDeck.defaultDiscards;
   static const int startingGold = 4;
 
   final int seed;
@@ -74,6 +80,15 @@ class RunState {
 
   /// The player beat the Ante 8 Finisher and chose to keep going (Antes 9+).
   final bool endless;
+
+  /// The starter deck this run began with (never changes during a run).
+  final String deckId;
+
+  /// Normal run, or the endless Quick Play arcade mode.
+  final RunMode mode;
+
+  /// What the last Quick Play move or settle granted (for HUD callouts).
+  final QuickPlayEvent quickEvent;
 
   /// Blinds of this ante that were skipped instead of played.
   final List<BlindType> skipped;
@@ -101,6 +116,8 @@ class RunState {
   final GridMatrix? preClearBoard;
 
   /// Jokers plus owned vouchers.
+  StarterDeck get deck => StarterDecks.byIdOrStandard(deckId);
+
   RunModifiers get modifiers => RunModifiers.fromRun(jokers, [
     for (final id in vouchers) VoucherRegistry.byId(id).modifiers,
   ]);
@@ -128,6 +145,7 @@ class RunState {
     int? placements,
     int? actions,
     bool? endless,
+    QuickPlayEvent? quickEvent,
     List<BlindType>? skipped,
     List<String>? consumables,
     List<String>? vouchers,
@@ -142,6 +160,8 @@ class RunState {
     GridMatrix? preClearBoard,
   }) => RunState(
     seed: seed,
+    deckId: deckId,
+    mode: mode,
     grid: grid ?? this.grid,
     tray: tray ?? this.tray,
     combo: combo ?? this.combo,
@@ -156,6 +176,7 @@ class RunState {
     placements: placements ?? this.placements,
     actions: actions ?? this.actions,
     endless: endless ?? this.endless,
+    quickEvent: quickEvent ?? this.quickEvent,
     skipped: skipped ?? this.skipped,
     consumables: consumables ?? this.consumables,
     vouchers: vouchers ?? this.vouchers,

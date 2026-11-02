@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/i18n/str_keys_game.dart';
+import '../state/locale_provider.dart';
 import '../core/roguelite/boss_blinds.dart';
 import '../core/scoring/clear_archetypes.dart';
 
 /// High-contrast warning shown during a Boss Blind round: the boss's name and
 /// its exact rule. For The Eye / The Mouth it also lists the clear types
 /// already used this blind, since those decide what still scores.
-class BossBanner extends StatelessWidget {
+class BossBanner extends ConsumerWidget {
   const BossBanner({
     super.key,
     required this.boss,
@@ -19,7 +22,8 @@ class BossBanner extends StatelessWidget {
   bool get _tracksUsed => boss.oncePerArchetype || boss.firstArchetypeOnly;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final strings = ref.watch(stringsProvider);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -42,7 +46,7 @@ class BossBanner extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  boss.name.toUpperCase(),
+                  strings.nameOf(boss.id, boss.name).toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -53,7 +57,7 @@ class BossBanner extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  boss.description,
+                  strings.descriptionOf(boss.id, boss.description),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -64,7 +68,11 @@ class BossBanner extends StatelessWidget {
                 ),
                 if (_tracksUsed && usedArchetypes.isNotEmpty)
                   Text(
-                    'Used: ${usedArchetypes.map(label).join(', ')}',
+                    strings.t(HudStr.used, {
+                      'list': usedArchetypes
+                          .map(strings.archetypeName)
+                          .join(', '),
+                    }),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(

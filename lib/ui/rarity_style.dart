@@ -3,26 +3,44 @@ import 'package:flutter/material.dart';
 import '../core/roguelite/consumables.dart';
 import '../core/roguelite/joker_registry.dart';
 import '../core/roguelite/shop_generator.dart';
+import '../core/i18n/str_keys_game.dart';
 
 /// The color theme of a joker rarity (or a non-joker item kind): pill label,
 /// border/glow color and, for Legendary, a second color for the gradient.
 class RarityStyle {
-  const RarityStyle({required this.label, required this.color, this.secondary});
+  const RarityStyle({
+    required this.label,
+    required this.color,
+    this.labelKey,
+    this.secondary,
+  });
 
+  /// The English pill text, and [labelKey] its translatable key.
   final String label;
+  final HudStr? labelKey;
   final Color color;
 
   /// Set only for Legendary (purple to gold).
   final Color? secondary;
 
-  static const common = RarityStyle(label: 'COMMON', color: Color(0xFF3B82F6));
+  static const common = RarityStyle(
+    label: 'COMMON',
+    labelKey: HudStr.rarityCommon,
+    color: Color(0xFF3B82F6),
+  );
   static const uncommon = RarityStyle(
     label: 'UNCOMMON',
+    labelKey: HudStr.rarityUncommon,
     color: Color(0xFF10B981),
   );
-  static const rare = RarityStyle(label: 'RARE', color: Color(0xFFEF4444));
+  static const rare = RarityStyle(
+    label: 'RARE',
+    labelKey: HudStr.rarityRare,
+    color: Color(0xFFEF4444),
+  );
   static const legendary = RarityStyle(
     label: 'LEGENDARY',
+    labelKey: HudStr.rarityLegendary,
     color: Color(0xFFA855F7),
     secondary: Color(0xFFF59E0B),
   );
@@ -30,11 +48,17 @@ class RarityStyle {
   // Non-joker items, colored by kind.
   static const blueprint = RarityStyle(
     label: 'BLUEPRINT',
+    labelKey: HudStr.rarityBlueprint,
     color: Color(0xFF38BDF8),
   );
-  static const chisel = RarityStyle(label: 'CHISEL', color: Color(0xFFF97316));
+  static const chisel = RarityStyle(
+    label: 'CHISEL',
+    labelKey: HudStr.rarityChisel,
+    color: Color(0xFFF97316),
+  );
   static const voucher = RarityStyle(
     label: 'VOUCHER',
+    labelKey: HudStr.rarityVoucher,
     color: Color(0xFF14B8A6),
   );
 

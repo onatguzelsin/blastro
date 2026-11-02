@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/roguelite/blind_preview.dart';
 import '../state/run_notifier.dart';
 import 'blind_card.dart';
+import '../core/i18n/str_keys_game.dart';
+import '../core/i18n/str_keys_menu.dart';
+import '../state/locale_provider.dart';
 
 /// Shown between blinds and at the start of every Ante: the three blinds of
 /// the current Ante with their status, target and reward. Covers the board.
@@ -14,6 +17,7 @@ class BlindSelectScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final t = ref.watch(stringsProvider).t;
     final s = ref.watch(runProvider);
     final notifier = ref.read(runProvider.notifier);
     final cards = BlindPreviews.forAnte(
@@ -34,7 +38,7 @@ class BlindSelectScreen extends ConsumerWidget {
                   TextButton.icon(
                     onPressed: onMenu,
                     icon: const Icon(Icons.arrow_back, size: 18),
-                    label: const Text('Menu'),
+                    label: Text(t(MenuStr.menu)),
                   ),
                   const Spacer(),
                   Text(
@@ -48,7 +52,7 @@ class BlindSelectScreen extends ConsumerWidget {
                 ],
               ),
               Text(
-                'ANTE ${s.ante}',
+                t(FlowStr.anteHeading, {'n': s.ante}),
                 style: const TextStyle(
                   fontSize: 34,
                   fontWeight: FontWeight.w900,
@@ -56,7 +60,7 @@ class BlindSelectScreen extends ConsumerWidget {
                 ),
               ),
               Text(
-                s.endless ? 'Endless Mode' : 'Choose your blind',
+                t(s.endless ? FlowStr.endlessMode : FlowStr.chooseBlind),
                 style: const TextStyle(color: Colors.white60),
               ),
               const SizedBox(height: 12),
@@ -71,9 +75,9 @@ class BlindSelectScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              const Text(
-                'Skipping a blind forfeits its reward and the shop.',
-                style: TextStyle(fontSize: 11, color: Colors.white38),
+              Text(
+                t(FlowStr.skipWarning),
+                style: const TextStyle(fontSize: 11, color: Colors.white38),
               ),
             ],
           ),

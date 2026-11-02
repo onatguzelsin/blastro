@@ -1,3 +1,4 @@
+import 'joker_catalog_color.dart';
 import 'joker_catalog_legendary.dart';
 import 'joker_catalog_scoring.dart';
 import 'joker_catalog_utility.dart';
@@ -50,12 +51,13 @@ class JokerDef {
   int get sellValue => basePrice ~/ 2;
 }
 
-/// All 23 jokers (20 core + 3 legendary). Saves store ids only; behaviour is looked up here.
+/// All 25 jokers (20 core + 3 legendary + 2 color). Saves store ids only; behaviour is looked up here.
 abstract final class JokerRegistry {
   static final List<JokerDef> all = List.unmodifiable([
     ...scoringJokers,
     ...utilityJokers,
     ...legendaryJokers,
+    ...colorJokers,
   ]);
 
   static final Map<String, JokerDef> _byId = {for (final d in all) d.id: d};

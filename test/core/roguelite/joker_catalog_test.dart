@@ -35,9 +35,9 @@ ScoreResult _score(
 );
 
 void main() {
-  test('registry has 23 unique jokers (20 core + 3 legendary)', () {
-    expect(JokerRegistry.all.length, 23);
-    expect(JokerRegistry.all.map((d) => d.id).toSet().length, 23);
+  test('registry has 25 unique jokers (20 core + 3 legendary + 2 color)', () {
+    expect(JokerRegistry.all.length, 25);
+    expect(JokerRegistry.all.map((d) => d.id).toSet().length, 25);
     for (final id in [
       'joker_cornerstone', 'joker_3x3_sanctuary', 'joker_seven_fingers',
       'joker_gyroscope', 'joker_streak_saver', 'joker_heavyweight',

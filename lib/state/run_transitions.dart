@@ -141,10 +141,10 @@ abstract final class RunTransitions {
         : null;
     return s.copyWith(
       traysRemaining:
-          boss?.fixedTrays ?? RunState.traysPerBlind + mods.extraTrays,
+          boss?.fixedTrays ?? s.deck.traysPerBlind + mods.extraTrays,
       discards: (boss?.noDiscards ?? false)
           ? 0
-          : RunState.discardsPerBlind + mods.extraDiscards,
+          : s.deck.discardsPerBlind + mods.extraDiscards,
       boss: boss,
       clearBoss: boss == null,
       archetypesThisBlind: const [],

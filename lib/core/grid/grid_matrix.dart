@@ -60,12 +60,7 @@ class GridMatrix {
   /// Stamps [piece] with its top-left at ([row], [col]). Throws
   /// [RangeError] if out of bounds and [StateError] on overlap; nothing is
   /// written when it throws.
-  void place(
-    Polyomino piece,
-    int row,
-    int col, {
-    GridCell cell = GridCell.plain,
-  }) {
+  void place(Polyomino piece, int row, int col, {GridCell? cell}) {
     for (final o in piece.cells) {
       final r = row + o.row;
       final c = col + o.col;
@@ -74,8 +69,10 @@ class GridMatrix {
       }
       if (isOccupied(r, c)) throw StateError('${piece.id} overlaps ($r,$c)');
     }
+    // A placed piece's cells keep the color it was dealt in.
+    final placed = cell ?? GridCell(color: piece.color);
     for (final o in piece.cells) {
-      _cells[row + o.row][col + o.col] = cell;
+      _cells[row + o.row][col + o.col] = placed;
     }
   }
 

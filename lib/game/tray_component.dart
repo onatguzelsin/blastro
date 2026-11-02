@@ -4,11 +4,12 @@ import '../core/polyomino/polyomino_shape.dart';
 import 'game_layout.dart';
 import 'tray_piece_component.dart';
 
-/// The bottom 3-slot tray. Owns one [TrayPieceComponent] per slot.
+/// The bottom tray (3 slots, or 4 in Quick Play). Owns one
+/// [TrayPieceComponent] per slot.
 class TrayComponent extends Component {
   TrayComponent(GameLayout layout)
     : slots = [
-        for (var i = 0; i < GameLayout.traySlots; i++)
+        for (var i = 0; i < layout.traySlots; i++)
           TrayPieceComponent(i, layout),
       ];
 
